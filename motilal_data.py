@@ -4,8 +4,15 @@ import json
 import pandas as pd
 import requests
 import os
+import sys
 from motilal_login import headers, auth_token, API_KEY
 from datetime import datetime
+
+# When this script's output is redirected to a log file (as the scheduled
+# task does), Windows defaults stdout to the system codepage instead of
+# UTF-8, which can't encode emoji like the momentum flag below and crashes
+# the whole run with UnicodeEncodeError. Forcing UTF-8 here fixes that.
+sys.stdout.reconfigure(encoding="utf-8")
 
 print(f"\n===== RUN: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} =====")
 
