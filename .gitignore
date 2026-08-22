@@ -1,1 +1,24 @@
-﻿motilal_login.py
+# Credentials -- never commit these
+angel_login.py
+motilal_login.py
+send_telegram.py
+twilio_login.py
+twilio_creds.py
+whatsapp_config.py
+
+# Generated/large data (regenerate locally via build_dataset.py,
+# download_angel_scrips.py, train_model.py, stock_check.py)
+angel_scrips.json
+training_data.csv
+price_model.pkl
+watchlist.json
+
+# Runtime state and logs
+__pycache__/
+*.log
+logs/
+*.lock
+alt_data_momentum.csv
+buy_sell_alerted_state.json
+momentum_alerted_state.json
+gainers_losers.json

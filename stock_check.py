@@ -1,11 +1,39 @@
+import json
 import yfinance as yf
 import pandas as pd
-
+from datetime import datetime
+print(f"\n===== RUN: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} =====")
 symbols = [
-    "RELIANCE.NS", "TCS.NS", "INFY.NS", "HDFCBANK.NS", "ITC.NS",
-    "ICICIBANK.NS", "HINDUNILVR.NS", "BHARTIARTL.NS", "SBIN.NS",
-    "MARUTI.NS", "SUNPHARMA.NS", "LT.NS"
+    "LLOYDSME.NS", "VMM.NS", "KRBL.NS", "KPRMILL.NS", "ARVIND.NS",
+    "LENSKART.NS", "ATULAUTO.NS", "ASTRAL.NS", "BEL.NS", "GLAND.NS",
+    "JUBFOOD.NS", "COALINDIA.NS", "POONAWALLA.NS", "KAJARIACER.NS", "ETERNAL.NS",
+    "GRASIM.NS", "VINATIORGA.NS", "APLAPOLLO.NS", "GOKEX.NS", "BHARTIHEXA.NS",
+    "HINDALCO.NS", "STARHEALTH.NS", "SUNTECH.NS", "LEMONTREE.NS", "AHLUCONT.NS",
+    "GRSE.NS", "NORTHARC.NS", "JIOFIN.NS", "SUPRAJIT.NS", "ACE.NS",
+    "AGARWALEYE.NS", "ASKAUTOMOTIVE.NS", "RATNAVEER.NS", "MAZDOCK.NS", "INDHOTEL.NS",
+    "RATEGAIN.NS", "PIDILITIND.NS", "JYOTICNC.NS", "SHRIRAMFIN.NS", "UPL.NS",
+    "SUNFLUG.NS", "HINDCOPPER.NS", "NYKAA.NS", "TMCV.NS", "SANDUMA.NS",
+    "UNITEDSPR.NS", "SAGILITY.NS", "HINDZINC.NS", "CUMMINSIND.NS", "RHIM.NS",
+    "DIVISLAB.NS", "SANDHAR.NS", "ZYSUSLIFE.NS", "PPLPHARMA.NS", "COHANCE.NS",
+    "ANTHEM.NS", "NETWEB.NS", "ANANTRAJ.NS", "TECHNOE.NS",
+    "POLYCAB.NS", "MARKSANS.NS", "LODHA.NS", "CARYSIL.NS", "DELHIVERY.NS",
+    "SOMANYCERA.NS", "SONACOM.NS", "ABB.NS", "ICIL.NS", "SIGNATURE.NS",
+    "BOMDYEING.NS", "OBERROIRLTY.NS", "AJMERA.NS", "HUDCO.NS", "MOTHERSON.NS",
+    "BRIGADE.NS", "VALOR.NS", "MANKIND.NS", "MOIL.NS", "GMRAIRPORT.NS",
+    "KEI.NS", "BDL.NS", "ROUTE.NS", "PRECWIRE.NS", "ADANIPORTS.NS",
+    "OSWALPUMPS.NS", "TAJGVK.NS", "PRESTIGE.NS", "BANSALWIRE.NS", "GULFOILS.NS",
+    "CEMPRO.NS", "MIDWEST.NS", "ARLANTAELE.NS", 
+    "GALAXYSURF.NS", "MFSL.NS", "GVPIL.NS", "VSTTILLERS.NS", "HAVELS.NS",
+    "BIL.NS", "ZENTECH.NS", "BHEL.NS", "MAHASTEEL-BE.NS", "MANALIPETC.NS",
+    "3MINDIA.NS", "MODISONLTD.NS", "SHANTI.NS", "ISHREEJISPG.NS", "JAIBALAJI.NS",
+    "KMEW.NS", "RUBICON.NS", "BELRISE.NS", "ORCHIDPHARMA.NS", "PATANJALI.NS",
+    "MARINE.NS", "STYLEBAAZA.NS", "AWFIS.NS", "KRN.NS", "INDIAGLYCO.NS",
+    "BALUFORGE.NS", "STYL.NS", "GPPL.NS", "CAPPLE.NS",
+    "ELECON.NS", "SENCO.NS", "CAPLIPOINT.NS", "HGINFRA.NS",
+
 ]
+
+    
 
 def calculate_rsi(prices, period=14):
     delta = prices.diff()
@@ -144,3 +172,19 @@ for r in results:
     print(f"{r['score']:+d}  {r['name']} ({r['symbol']})")
     print(f"     {', '.join(r['notes']) if r['notes'] else 'no data available'}")
     print()
+# --- Export top N to watchlist.json for the daily price/signal script ---
+TOP_N = 10
+
+watchlist = []
+for r in results[:TOP_N]:
+    watchlist.append({
+        "symbol": r["symbol"].replace(".NS", ""),
+        "name": r["name"],
+        "score": r["score"],
+        "notes": r["notes"]
+    })
+
+with open("watchlist.json", "w") as f:
+    json.dump(watchlist, f, indent=2)
+
+print(f"\nSaved top {TOP_N} stocks to watchlist.json")
