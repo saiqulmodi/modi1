@@ -5,6 +5,8 @@ send_telegram.py
 twilio_login.py
 twilio_creds.py
 whatsapp_config.py
+test_whatsapp.py
+list_templates.py
 
 # Generated/large data (regenerate locally via build_dataset.py,
 # download_angel_scrips.py, train_model.py, stock_check.py)
