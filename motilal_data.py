@@ -6,6 +6,7 @@ import requests
 import os
 import sys
 from motilal_login import headers, auth_token, API_KEY
+from angel_data import get_angel_ltp
 from datetime import datetime
 
 # When this script's output is redirected to a log file (as the scheduled
@@ -124,8 +125,11 @@ for name, scripcode in stocks.items():
         "exchange": "NSE",
         "scripcode": scripcode
     }
-    response = requests.post(ltp_url, json=body, headers=ltp_headers)
-    result = response.json()
+    try:
+        response = requests.post(ltp_url, json=body, headers=ltp_headers, timeout=10)
+        result = response.json()
+    except Exception:
+        result = {"status": "FAILED", "message": "Motilal request/parse error"}
 
     if result.get("status") == "SUCCESS":
         d = result["data"]
@@ -134,25 +138,34 @@ for name, scripcode in stocks.items():
         high = d["high"] / 100
         low = d["low"] / 100
         prev_close = d["close"] / 100
-
-        change = ltp - prev_close
-        pct_change = (change / prev_close) * 100 if prev_close else 0
-        trend_score, signal = get_trend_signal(name)
-        combined_score = fundamentals_scores.get(name, 0) + trend_score
-        verdict = get_verdict(combined_score)
-
-        momentum = alt_momentum.get(name)
-        momentum_note = ""
-        momentum_flag = ""
-        if pd.notna(momentum):
-            momentum_note = f" | search {momentum:+.0f}%"
-            if momentum >= 100:
-                momentum_flag = " 🔥"
-
-        print(f"{name}: Rs.{ltp:.2f}  ({pct_change:+.2f}%)  [Open: {open_price:.2f}  High: {high:.2f}  Low: {low:.2f}]  | {signal}{momentum_note}  ==> {verdict} (combined score {combined_score:+d}){momentum_flag}")
-        summary_lines.append(f"{name}: Rs.{ltp:.2f} -> {verdict} ({combined_score:+d}){momentum_note}{momentum_flag}")
     else:
-        print(f"{name}: Error - {result.get('message')}")
+        angel_result = get_angel_ltp(name)
+        if not angel_result or not angel_result.get("status"):
+            print(f"{name}: Motilal and Angel One both failed, skipping")
+            continue
+        d = angel_result["data"]
+        ltp = d["ltp"]
+        open_price = d.get("open", ltp)
+        high = d.get("high", ltp)
+        low = d.get("low", ltp)
+        prev_close = d["close"]
+
+    change = ltp - prev_close
+    pct_change = (change / prev_close) * 100 if prev_close else 0
+    trend_score, signal = get_trend_signal(name)
+    combined_score = fundamentals_scores.get(name, 0) + trend_score
+    verdict = get_verdict(combined_score)
+
+    momentum = alt_momentum.get(name)
+    momentum_note = ""
+    momentum_flag = ""
+    if pd.notna(momentum):
+        momentum_note = f" | search {momentum:+.0f}%"
+        if momentum >= 100:
+            momentum_flag = " 🔥"
+
+    print(f"{name}: Rs.{ltp:.2f}  ({pct_change:+.2f}%)  [Open: {open_price:.2f}  High: {high:.2f}  Low: {low:.2f}]  | {signal}{momentum_note}  ==> {verdict} (combined score {combined_score:+d}){momentum_flag}")
+    summary_lines.append(f"{name}: Rs.{ltp:.2f} -> {verdict} ({combined_score:+d}){momentum_note}{momentum_flag}")
 
 # --- Send Telegram summary ---
 summary_message = "\n".join(summary_lines)
