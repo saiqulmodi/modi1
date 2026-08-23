@@ -37,7 +37,8 @@ with open(LOCK_FILE, "w") as f:
     f.write(str(datetime.now()))
 
 try:
-    print(f"\n===== RUN: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} =====")
+    _run_start = datetime.now()
+    print(f"\n===== RUN: {_run_start.strftime('%Y-%m-%d %H:%M:%S')} =====")
 
     VOLUME_THRESHOLD = 1.21   # 21% above 20-day avg volume
     PRICE_MOVE_THRESHOLD = 10.0  # 10% move vs previous close
@@ -156,12 +157,18 @@ try:
         if current_chunk:
             chunks.append(current_chunk)
 
+        total_sent_ok = True
         for chunk in chunks:
             sent = send_telegram_message("\n".join(chunk))
             if not sent:
+                total_sent_ok = False
                 print(f"  (Telegram send failed for {len(chunk)} alert(s))")
+        print(f"Sent {len(alerts)} alert(s) in {len(chunks)} message(s). Telegram sent: {total_sent_ok}")
     else:
         print("None")
+
+    _elapsed = (datetime.now() - _run_start).total_seconds()
+    print(f"===== RUN COMPLETE: took {_elapsed/60:.1f} min =====")
 
 finally:
     if os.path.exists(LOCK_FILE):
