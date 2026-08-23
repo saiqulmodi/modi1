@@ -58,4 +58,32 @@ INTRADAY_SYMBOLS = [
     "NESTLEIND", "ONGC", "RECLTD", "SBICARD", "SUNPHARMA", "TATACONSUM",
     "TATASTEEL", "TCS", "TECHM", "TITAN", "TMPV", "TRENT", "ULTRACEMCO",
     "WIPRO",
+
+    # Pharma/CDMO + hospital: NIFTY Pharma + NIFTY Healthcare (official NSE
+    # index lists) plus dedicated CDMO/hospital names from general knowledge
+    # (not from an official index -- worth a spot-check).
+    "ABBOTINDIA", "AJANTPHARM", "ALKEM", "AUROPHARMA", "FORTIS", "GLENMARK",
+    "LAURUSLABS", "LUPIN", "SYNGENE", "TORNTPHARM", "WOCKPHARMA",
+    "AARTIPHARM", "HIKAL", "SUVENPHAR", "GLOBALHEALTH", "KIMS", "SHALBY",
+    "YATHARTH",
+
+    # Textiles (general knowledge, not an official index -- worth a spot-check).
+    "TRIDENT", "RAYMOND", "PAGEIND", "SUTLEJTEX", "SIYSIL", "NITINSPIN",
+    "HIMATSEIDE",
+
+    # Hospitality/travel (general knowledge, not an official index -- worth a spot-check).
+    "MHRIL", "SAMHI", "JUNIPER", "EASEMYTRIP", "THOMASCOOK", "WONDERLA",
+
+    # Auto ancillaries: NIFTY Auto (official NSE index, includes OEMs +
+    # top ancillaries) plus additional dedicated ancillary names from
+    # general knowledge (not from an official index -- worth a spot-check).
+    "BHARATFORG", "BOSCHLTD", "EXIDEIND", "HEROMOTOCO", "TIINDIA",
+    "AMARAJABAT", "APOLLOTYRE", "AUTOAXLES", "FIEMIND", "JAMNAAUTO",
+    "LUMAXIND", "MAHINDCIE", "MRF", "RAJRATAN", "RANEBRAKE", "RANEHOLDIN",
+    "RICOAUTO", "SSWL", "SUBROS", "SUNDRMFAST", "VARROC",
+
+    # Data center theme (genuinely niche in listed Indian markets -- most
+    # pure-play data center operators aren't public; these are the closest
+    # listed proxies, from general knowledge not an official index).
+    "SIFY", "RAILTEL", "KAYNES",
 ]
