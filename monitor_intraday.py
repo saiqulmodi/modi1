@@ -136,17 +136,30 @@ try:
             direction = "up" if pct_change > 0 else "down"
             alerts.append(f"Price {direction} {name}{suffix}: {pct_change:.2f}% (LTP {ltp:.2f})")
 
-    ALERT_GAP_SECONDS = 5 * 60  # 5 minutes between each Telegram alert
+    # Alerts from this run are sent as one consolidated message rather than
+    # one-by-one with a sleep in between -- runs are already ~25 minutes
+    # apart, which paces things out fine on its own, and sleeping here would
+    # directly re-introduce the overlap-with-the-next-run risk we just fixed.
     print("\n--- Alerts triggered ---")
     if alerts:
-        for i, a in enumerate(alerts):
+        for a in alerts:
             print(a)
-            sent = send_telegram_message(a)
+
+        MAX_MESSAGE_CHARS = 3500
+        chunks, current_chunk, current_len = [], [], 0
+        for a in alerts:
+            if current_len + len(a) + 1 > MAX_MESSAGE_CHARS and current_chunk:
+                chunks.append(current_chunk)
+                current_chunk, current_len = [], 0
+            current_chunk.append(a)
+            current_len += len(a) + 1
+        if current_chunk:
+            chunks.append(current_chunk)
+
+        for chunk in chunks:
+            sent = send_telegram_message("\n".join(chunk))
             if not sent:
-                print(f"  (Telegram send failed for: {a})")
-            if i < len(alerts) - 1:
-                print(f"  (waiting {ALERT_GAP_SECONDS/60:.1f} min before next alert...)")
-                time.sleep(ALERT_GAP_SECONDS)
+                print(f"  (Telegram send failed for {len(chunk)} alert(s))")
     else:
         print("None")
 
