@@ -8,19 +8,17 @@ when today's actual intraday price action agrees with the direction, rather
 than alerting purely on daily-bar fundamentals/trend data that may be stale
 by the time the market opens.
 
-Volume confirmation is liquidity-tiered rather than a single flat ratio,
-because mid/small-cap stocks have much noisier day-to-day volume than large
-caps -- a flat threshold either lets small-cap noise "confirm" too easily or
-is too strict for genuinely liquid names. So:
+Volume confirmation is liquidity-tiered, since a flat ratio means very
+different things depending on how liquid a stock normally is:
 
   - Mega-cap (market cap >= 1,00,000 crore): needs today's volume >= 1.75x
     the 20-day average. These names are so liquid that even 1.75x is a real,
     unusual move.
   - Large-cap (market cap >= 20,000 crore): needs >= 1.5x the 20-day average.
-  - Everything smaller: a flat ratio doesn't mean much against these stocks'
-    own volatility, so instead requires today's volume to be at least 2
-    standard deviations above its own 20-day mean (a z-score), which
-    self-adjusts to how noisy that specific stock's volume normally is.
+  - Mid/small-cap (everything smaller): needs >= 2x the 20-day average --
+    the highest bar of the three, since these stocks see noisier day-to-day
+    volume swings and a smaller multiple wouldn't reliably separate a real
+    move from ordinary noise.
 
 Fails closed: if there isn't enough intraday data yet (e.g. right at market
 open) or the candle fetch fails, get_intraday_confirmation() returns None
@@ -40,7 +38,7 @@ MEGA_CAP_MARKET_CAP = 1_000_000_000_000   # Rs. 1,00,000 crore
 LARGE_CAP_MARKET_CAP = 200_000_000_000    # Rs. 20,000 crore
 MEGA_CAP_VOLUME_RATIO = 1.75
 LARGE_CAP_VOLUME_RATIO = 1.5
-MID_SMALL_CAP_ZSCORE = 2.0
+MID_SMALL_CAP_VOLUME_RATIO = 2.0
 
 
 def _headers():
@@ -83,30 +81,27 @@ def get_today_candles(token, exchange="NSE", interval="FIVE_MINUTE"):
 
 
 def get_volume_threshold(symbol):
-    """
-    Returns (tier, ratio_threshold) where ratio_threshold is None for
-    mid/small caps, since those use a z-score instead of a flat ratio.
-    """
+    """Returns (tier, ratio_threshold) for the given symbol's market-cap tier."""
     try:
         market_cap = yf.Ticker(symbol + ".NS").info.get("marketCap")
     except Exception:
         market_cap = None
 
     if market_cap is None:
-        return "unknown", None
+        return "unknown", MID_SMALL_CAP_VOLUME_RATIO
     elif market_cap >= MEGA_CAP_MARKET_CAP:
         return "mega_cap", MEGA_CAP_VOLUME_RATIO
     elif market_cap >= LARGE_CAP_MARKET_CAP:
         return "large_cap", LARGE_CAP_VOLUME_RATIO
     else:
-        return "mid_small_cap", None
+        return "mid_small_cap", MID_SMALL_CAP_VOLUME_RATIO
 
 
 def get_intraday_confirmation(token, symbol, daily_volume, exchange="NSE"):
     """
     daily_volume: pandas Series of the last ~20 trading days' daily volume
     (e.g. yf.Ticker(symbol + ".NS").history(period="30d")["Volume"].tail(20)),
-    used as the baseline for both the flat-ratio and z-score volume checks.
+    used as the baseline for the volume-ratio check.
 
     Returns a dict describing today's intraday state, or None if there
     isn't enough data yet to judge anything (too early in the day, or the
@@ -133,16 +128,10 @@ def get_intraday_confirmation(token, symbol, daily_volume, exchange="NSE"):
 
     today_volume = df["volume"].sum()
     mean_volume = daily_volume.mean() if daily_volume is not None and len(daily_volume) else None
-    std_volume = daily_volume.std() if daily_volume is not None and len(daily_volume) > 1 else None
-
     volume_ratio = (today_volume / mean_volume) if mean_volume else None
-    z_score = ((today_volume - mean_volume) / std_volume) if std_volume else None
 
     tier, ratio_threshold = get_volume_threshold(symbol)
-    if ratio_threshold is not None:
-        volume_confirms = volume_ratio is not None and volume_ratio >= ratio_threshold
-    else:
-        volume_confirms = z_score is not None and z_score >= MID_SMALL_CAP_ZSCORE
+    volume_confirms = volume_ratio is not None and volume_ratio >= ratio_threshold
 
     above_vwap = current_price > current_vwap
 
@@ -155,7 +144,7 @@ def get_intraday_confirmation(token, symbol, daily_volume, exchange="NSE"):
         "orb_breakout": orb_breakout,
         "liquidity_tier": tier,
         "volume_ratio": round(volume_ratio, 2) if volume_ratio is not None else None,
-        "volume_zscore": round(z_score, 2) if z_score is not None else None,
+        "volume_threshold": ratio_threshold,
         "volume_confirms": volume_confirms,
         "confirms_bullish": above_vwap and orb_breakout == "UP" and volume_confirms,
         "confirms_bearish": (not above_vwap) and orb_breakout == "DOWN" and volume_confirms,

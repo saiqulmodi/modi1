@@ -112,13 +112,9 @@ for entry in watchlist:
         if signal in ("BUY", "SELL/AVOID"):
             emoji = "🟢" if signal == "BUY" else "🔴"
             prob_str = f"{ml_prob:.0%}" if ml_prob is not None else "N/A"
-            vol_str = (
-                f"{intraday['volume_ratio']}x avg" if intraday["volume_ratio"] is not None
-                else f"z={intraday['volume_zscore']}"
-            )
             intraday_str = (
                 f"VWAP {intraday['vwap']}, ORB {intraday['orb_breakout']}, "
-                f"vol {vol_str} ({intraday['liquidity_tier']})"
+                f"vol {intraday['volume_ratio']}x avg (needs {intraday['volume_threshold']}x, {intraday['liquidity_tier']})"
             )
             new_alerts.append(
                 f"{emoji} {symbol} ({entry['name']}): {signal} "
