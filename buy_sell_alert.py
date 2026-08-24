@@ -36,6 +36,7 @@ if _now < _market_start or _now > _market_end:
 
 import json
 import os
+import sys
 import pandas as pd
 import yfinance as yf
 from send_telegram import send_telegram_message
@@ -43,8 +44,24 @@ from ml_predict import get_ml_probability
 from angel_data import find_symbol_token
 from intraday_confirm import get_intraday_confirmation
 
+# MODI4: automated order placement (still DRY_RUN=True there -- no real
+# orders are possible until that's explicitly flipped off). Order execution
+# goes through Motilal (that's where the real trading account is); Angel
+# above is only used for intraday candle confirmation, unchanged.
+sys.path.insert(0, r"C:\Users\saiqu\Projects\MODI4")
+from place_order import place_order
+from risk_manager import calculate_quantity, get_open_position
+
 WATCHLIST_FILE = "watchlist.json"
 STATE_FILE = "buy_sell_alerted_state.json"
+
+_nse_scrips = pd.read_csv("nse_scrips.csv", low_memory=False)
+_equities = _nse_scrips[(_nse_scrips["exchangename"] == "NSE") & (_nse_scrips["optiontype"] == "EQ")]
+
+
+def get_motilal_scripcode(symbol):
+    match = _equities[_equities["scripshortname"] == symbol]
+    return int(match.iloc[0]["scripcode"]) if not match.empty else None
 
 
 def get_score_verdict(score):
@@ -120,6 +137,28 @@ for entry in watchlist:
                 f"{emoji} {symbol} ({entry['name']}): {signal} "
                 f"(score {entry['score']}, ml_prob {prob_str}, {intraday_str})"
             )
+
+            # MODI4 auto-trading (still DRY_RUN there): BUY opens a new
+            # rupee-sized position; SELL/AVOID only closes a position MODI4
+            # is already tracking -- it never opens a fresh short (this
+            # signal just means "bearish", not "you own this stock").
+            scripcode = get_motilal_scripcode(symbol)
+            if scripcode is None:
+                print(f"{symbol}: MODI4 order skipped, no Motilal scripcode found")
+            elif signal == "BUY":
+                qty = calculate_quantity(intraday["current_price"])
+                place_order(
+                    symbol=symbol, scripcode=scripcode, exchange="NSE",
+                    transaction_type="BUY", quantity=qty,
+                    entry_price=intraday["current_price"],
+                )
+            elif signal == "SELL/AVOID" and get_open_position(symbol):
+                held_qty = get_open_position(symbol)["quantity"]
+                place_order(
+                    symbol=symbol, scripcode=scripcode, exchange="NSE",
+                    transaction_type="SELL", quantity=held_qty,
+                    entry_price=intraday["current_price"],
+                )
 
 if new_alerts:
     CHUNK_SIZE = 40
