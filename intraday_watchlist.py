@@ -86,4 +86,16 @@ INTRADAY_SYMBOLS = [
     # pure-play data center operators aren't public; these are the closest
     # listed proxies, from general knowledge not an official index).
     "SIFY", "RAILTEL", "KAYNES",
+
+    # Construction/housing/railway/bridges + ancillaries (cement, paint,
+    # tiles, pipes): NIFTY Realty + NIFTY Infra (official NSE index lists)
+    # plus dedicated names from general knowledge (not an official index --
+    # worth a spot-check).
+    "ABREL", "BPCL", "CGPOWER", "DLF", "GAIL", "HINDPETRO", "INDUSTOWER",
+    "IOC", "PHOENIXLTD", "SHREECEM", "SUZLON",
+    "ACC", "AKZOINDIA", "ASHOKA", "BERGEPAINT", "BIRLACORPN", "CERA",
+    "DALBHARAT", "DBL", "FINPIPE", "GRINFRA", "INDIACEM", "IRB", "IRCON",
+    "ITDCEM", "JKIL", "JKLAKSHMI", "KEC", "KNRCON", "NCC", "NITCO",
+    "NUVOCO", "ORIENTBELL", "PNCINFRA", "PRINCEPIPE", "RITES",
+    "STARCEMENT", "TEXRAIL",
 ]
