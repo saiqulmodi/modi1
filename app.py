@@ -10,7 +10,10 @@ from angel_data import get_angel_ltp
 from concurrent.futures import ThreadPoolExecutor
 
 st.set_page_config(page_title="MODI1 Dashboard", layout="wide")
-st_autorefresh(interval=60000, key="datarefresh")  # refreshes every 90 seconds
+# Full render (watchlist + gainers/losers) measured at ~50s; a 60s refresh
+# was cutting it off mid-render before the Gainers/Losers section (rendered
+# last) ever finished, so it silently never appeared. 150s gives real margin.
+st_autorefresh(interval=150000, key="datarefresh")
 st.title("MODI1 - Stock Watchlist")
 
 if st.button("Refresh"):
@@ -71,14 +74,13 @@ def get_verdict(score):
     else:
         return "HOLD"
 
-rows = []
-for entry in watchlist:
+def build_row(entry):
     symbol = entry["symbol"]
     scripcode = get_scripcode(symbol)
     ltp, pct_change = get_live_price(scripcode, symbol) if scripcode else (None, None)
     ml_prob = get_ml_probability(symbol + ".NS")
     momentum = alt_momentum.get(symbol)
-    rows.append({
+    return {
         "symbol": symbol,
         "name": entry["name"],
         "score": entry["score"],
@@ -88,7 +90,11 @@ for entry in watchlist:
         "ml_probability": f"{ml_prob:.1%}" if ml_prob is not None else "N/A",
         "search_momentum": f"{momentum:+.1f}%" if pd.notna(momentum) else "N/A",
         "notes": ", ".join(entry["notes"])
-    })
+    }
+
+with ThreadPoolExecutor(max_workers=8) as executor:
+    rows = list(executor.map(build_row, watchlist))
+
 df = pd.DataFrame(rows)
 
 def color_verdict(row):
