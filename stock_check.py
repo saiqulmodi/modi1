@@ -2,36 +2,17 @@ import json
 import yfinance as yf
 import pandas as pd
 from datetime import datetime
+from intraday_watchlist import INTRADAY_SYMBOLS
 print(f"\n===== RUN: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} =====")
-symbols = [
-    "LLOYDSME.NS", "VMM.NS", "KRBL.NS", "KPRMILL.NS", "ARVIND.NS",
-    "LENSKART.NS", "ATULAUTO.NS", "ASTRAL.NS", "BEL.NS", "GLAND.NS",
-    "JUBFOOD.NS", "COALINDIA.NS", "POONAWALLA.NS", "KAJARIACER.NS", "ETERNAL.NS",
-    "GRASIM.NS", "VINATIORGA.NS", "APLAPOLLO.NS", "GOKEX.NS", "BHARTIHEXA.NS",
-    "HINDALCO.NS", "STARHEALTH.NS", "SUNTECH.NS", "LEMONTREE.NS", "AHLUCONT.NS",
-    "GRSE.NS", "NORTHARC.NS", "JIOFIN.NS", "SUPRAJIT.NS", "ACE.NS",
-    "AGARWALEYE.NS", "ASKAUTOMOTIVE.NS", "RATNAVEER.NS", "MAZDOCK.NS", "INDHOTEL.NS",
-    "RATEGAIN.NS", "PIDILITIND.NS", "JYOTICNC.NS", "SHRIRAMFIN.NS", "UPL.NS",
-    "SUNFLUG.NS", "HINDCOPPER.NS", "NYKAA.NS", "TMCV.NS", "SANDUMA.NS",
-    "UNITEDSPR.NS", "SAGILITY.NS", "HINDZINC.NS", "CUMMINSIND.NS", "RHIM.NS",
-    "DIVISLAB.NS", "SANDHAR.NS", "ZYSUSLIFE.NS", "PPLPHARMA.NS", "COHANCE.NS",
-    "ANTHEM.NS", "NETWEB.NS", "ANANTRAJ.NS", "TECHNOE.NS",
-    "POLYCAB.NS", "MARKSANS.NS", "LODHA.NS", "CARYSIL.NS", "DELHIVERY.NS",
-    "SOMANYCERA.NS", "SONACOM.NS", "ABB.NS", "ICIL.NS", "SIGNATURE.NS",
-    "BOMDYEING.NS", "OBERROIRLTY.NS", "AJMERA.NS", "HUDCO.NS", "MOTHERSON.NS",
-    "BRIGADE.NS", "VALOR.NS", "MANKIND.NS", "MOIL.NS", "GMRAIRPORT.NS",
-    "KEI.NS", "BDL.NS", "ROUTE.NS", "PRECWIRE.NS", "ADANIPORTS.NS",
-    "OSWALPUMPS.NS", "TAJGVK.NS", "PRESTIGE.NS", "BANSALWIRE.NS", "GULFOILS.NS",
-    "CEMPRO.NS", "MIDWEST.NS", "ARLANTAELE.NS", 
-    "GALAXYSURF.NS", "MFSL.NS", "GVPIL.NS", "VSTTILLERS.NS", "HAVELS.NS",
-    "BIL.NS", "ZENTECH.NS", "BHEL.NS", "MAHASTEEL-BE.NS", "MANALIPETC.NS",
-    "3MINDIA.NS", "MODISONLTD.NS", "SHANTI.NS", "ISHREEJISPG.NS", "JAIBALAJI.NS",
-    "KMEW.NS", "RUBICON.NS", "BELRISE.NS", "ORCHIDPHARMA.NS", "PATANJALI.NS",
-    "MARINE.NS", "STYLEBAAZA.NS", "AWFIS.NS", "KRN.NS", "INDIAGLYCO.NS",
-    "BALUFORGE.NS", "STYL.NS", "GPPL.NS", "CAPPLE.NS",
-    "ELECON.NS", "SENCO.NS", "CAPLIPOINT.NS", "HGINFRA.NS",
 
-]
+# Scans the full watchlist universe (all sectors added over time: pharma/
+# CDMO, textiles, hospitals, hospitality, auto ancillaries, data center,
+# construction/housing/railway/cement/paint/tiles, NIFTY50+financials,
+# plus the original screening list) rather than a separate, narrower
+# hardcoded list -- still only the TOP_N below actually become tradeable
+# candidates in watchlist.json, so this widens the pool of opportunities
+# considered without changing how many are ever acted on.
+symbols = [s + ".NS" for s in INTRADAY_SYMBOLS]
 
     
 
