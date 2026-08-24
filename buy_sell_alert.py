@@ -138,10 +138,15 @@ for entry in watchlist:
                 f"(score {entry['score']}, ml_prob {prob_str}, {intraday_str})"
             )
 
-            # MODI4 auto-trading (still DRY_RUN there): BUY opens a new
+            # MODI4 auto-trading (live for MODI1/NSE): BUY opens a new
             # rupee-sized position; SELL/AVOID only closes a position MODI4
             # is already tracking -- it never opens a fresh short (this
             # signal just means "bearish", not "you own this stock").
+            # product_type=MTF: leveraged, broker-funded, carries forward
+            # across days (not squared off same day) -- interest accrues on
+            # the funded portion, which isn't reflected in our P&L tracking,
+            # and not every stock is MTF-eligible (Motilal will reject those
+            # orders safely, logged as live_failed).
             scripcode = get_motilal_scripcode(symbol)
             if scripcode is None:
                 print(f"{symbol}: MODI4 order skipped, no Motilal scripcode found")
@@ -151,6 +156,7 @@ for entry in watchlist:
                     symbol=symbol, scripcode=scripcode, exchange="NSE",
                     transaction_type="BUY", quantity=qty,
                     entry_price=intraday["current_price"],
+                    product_type="MTF",
                 )
             elif signal == "SELL/AVOID" and get_open_position(symbol):
                 held_qty = get_open_position(symbol)["quantity"]
@@ -158,6 +164,7 @@ for entry in watchlist:
                     symbol=symbol, scripcode=scripcode, exchange="NSE",
                     transaction_type="SELL", quantity=held_qty,
                     entry_price=intraday["current_price"],
+                    product_type="MTF",
                 )
 
 if new_alerts:
