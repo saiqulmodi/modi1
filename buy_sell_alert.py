@@ -51,7 +51,7 @@ from intraday_confirm import get_intraday_confirmation
 sys.path.insert(0, r"C:\Users\saiqu\Projects\MODI4")
 from place_order import place_order
 from risk_manager import calculate_quantity, get_open_position
-from holdings import get_broker_holdings
+from holdings import get_broker_holdings, get_broker_positions
 
 WATCHLIST_FILE = "watchlist.json"
 STATE_FILE = "buy_sell_alerted_state.json"
@@ -108,14 +108,17 @@ else:
 
 _today_str = _now.strftime("%Y-%m-%d")
 
-# Real Motilal demat holdings, fetched once per run -- this is what lets
-# the protective LL+LH exit below cover stocks you already held before
-# MODI4 existed or bought manually, not just positions MODI4 itself opened
-# (risk_manager.get_open_position() only knows about its own trades).
-# Fails closed to {} on any error, so a fetch hiccup just means the
-# broker-holdings side of the check is skipped for this run, not that
-# nothing is held.
+# Real Motilal demat holdings AND MTF positions, fetched once per run --
+# this is what lets the protective LL+LH exit below cover stocks you
+# already held before MODI4 existed or bought manually, not just positions
+# MODI4 itself opened (risk_manager.get_open_position() only knows about
+# its own trades). MTF buys are broker-funded/pledged and do NOT show up
+# under DP holdings -- they're a separate "position", so both sources are
+# needed to see the whole picture. Each fails closed to {} on error, so a
+# fetch hiccup just means that side of the check is skipped this run, not
+# that nothing is held.
 broker_holdings = get_broker_holdings()
+broker_positions = get_broker_positions()
 
 new_alerts = []
 for entry in watchlist:
@@ -125,8 +128,9 @@ for entry in watchlist:
 
     scripcode = get_motilal_scripcode(symbol)
     self_tracked = get_open_position(symbol)
-    broker_held = broker_holdings.get(str(scripcode)) if scripcode is not None else None
-    is_held = self_tracked is not None or broker_held is not None
+    mtf_held = broker_positions.get(str(scripcode)) if scripcode is not None else None
+    dp_held = broker_holdings.get(str(scripcode)) if scripcode is not None else None
+    is_held = self_tracked is not None or mtf_held is not None or dp_held is not None
 
     intraday = None
     if signal in ("BUY", "SELL/AVOID") or is_held:
@@ -161,11 +165,16 @@ for entry in watchlist:
         and intraday.get("swing_structure_bearish")
         and protective_exit_state.get(symbol) != _today_str
     ):
-        qty = self_tracked["quantity"] if self_tracked else broker_held["quantity"]
-        # MTF close for a position MODI4 itself opened (matches how it was
-        # bought); SELLFROMDP for a pre-existing/manual demat holding MODI4
-        # never bought, since that's not tracked as an MTF/NORMAL position.
-        product_type = "MTF" if self_tracked else "SELLFROMDP"
+        # MTF close for a position MODI4 itself opened, or any pre-existing
+        # MTF position the broker already shows as a margin position
+        # (matches how it's actually held); SELLFROMDP only for a plain
+        # DP/delivery holding with no margin position behind it.
+        if self_tracked:
+            qty, product_type = self_tracked["quantity"], "MTF"
+        elif mtf_held:
+            qty, product_type = mtf_held["quantity"], "MTF"
+        else:
+            qty, product_type = dp_held["quantity"], "SELLFROMDP"
         print(f"{symbol}: protective SELL (swing structure LL+LH), qty {qty}, product_type {product_type}")
         place_order(
             symbol=symbol, scripcode=scripcode, exchange="NSE",
