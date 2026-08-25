@@ -51,9 +51,11 @@ from intraday_confirm import get_intraday_confirmation
 sys.path.insert(0, r"C:\Users\saiqu\Projects\MODI4")
 from place_order import place_order
 from risk_manager import calculate_quantity, get_open_position
+from holdings import get_broker_holdings
 
 WATCHLIST_FILE = "watchlist.json"
 STATE_FILE = "buy_sell_alerted_state.json"
+PROTECTIVE_EXIT_STATE_FILE = "protective_exit_state.json"
 
 _nse_scrips = pd.read_csv("nse_scrips.csv", low_memory=False)
 _equities = _nse_scrips[(_nse_scrips["exchangename"] == "NSE") & (_nse_scrips["optiontype"] == "EQ")]
@@ -98,29 +100,80 @@ if os.path.exists(STATE_FILE):
 else:
     state = {}
 
+if os.path.exists(PROTECTIVE_EXIT_STATE_FILE):
+    with open(PROTECTIVE_EXIT_STATE_FILE, "r") as f:
+        protective_exit_state = json.load(f)
+else:
+    protective_exit_state = {}
+
+_today_str = _now.strftime("%Y-%m-%d")
+
+# Real Motilal demat holdings, fetched once per run -- this is what lets
+# the protective LL+LH exit below cover stocks you already held before
+# MODI4 existed or bought manually, not just positions MODI4 itself opened
+# (risk_manager.get_open_position() only knows about its own trades).
+# Fails closed to {} on any error, so a fetch hiccup just means the
+# broker-holdings side of the check is skipped for this run, not that
+# nothing is held.
+broker_holdings = get_broker_holdings()
+
 new_alerts = []
 for entry in watchlist:
     symbol = entry["symbol"]
     ml_prob = get_ml_probability(symbol + ".NS")
     signal = get_combined_signal(entry["score"], ml_prob)
 
+    scripcode = get_motilal_scripcode(symbol)
+    self_tracked = get_open_position(symbol)
+    broker_held = broker_holdings.get(str(scripcode)) if scripcode is not None else None
+    is_held = self_tracked is not None or broker_held is not None
+
     intraday = None
-    if signal in ("BUY", "SELL/AVOID"):
+    if signal in ("BUY", "SELL/AVOID") or is_held:
         token = find_symbol_token(symbol)
         if token:
             hist = yf.Ticker(symbol + ".NS").history(period="30d")
-            daily_volume = hist["Volume"].tail(20) if not hist.empty else None
-            intraday = get_intraday_confirmation(token, symbol, daily_volume)
+            intraday = get_intraday_confirmation(token, symbol, hist)
 
         if intraday is None:
-            print(f"{symbol}: {signal} signal held back, no intraday confirmation data available")
-            signal = "HOLD"
+            if signal in ("BUY", "SELL/AVOID"):
+                print(f"{symbol}: {signal} signal held back, no intraday confirmation data available")
+                signal = "HOLD"
         elif signal == "BUY" and not intraday["confirms_bullish"]:
             print(f"{symbol}: BUY signal held back, intraday action doesn't confirm ({intraday})")
             signal = "HOLD"
         elif signal == "SELL/AVOID" and not intraday["confirms_bearish"]:
             print(f"{symbol}: SELL/AVOID signal held back, intraday action doesn't confirm ({intraday})")
             signal = "HOLD"
+
+    # Independent protective exit: Lower-Low + Lower-High over the last 3
+    # days, for ANY currently held position -- regardless of what the
+    # score-based signal above says (a stock can be structurally breaking
+    # down while the score/ML verdict still reads HOLD or even BUY on
+    # stale daily data). Fires at most once per symbol per day so a
+    # broker-holdings entry that hasn't settled/updated yet by the next
+    # 5-minute cycle doesn't get sold again before the position actually
+    # clears.
+    if (
+        is_held
+        and scripcode is not None
+        and intraday is not None
+        and intraday.get("swing_structure_bearish")
+        and protective_exit_state.get(symbol) != _today_str
+    ):
+        qty = self_tracked["quantity"] if self_tracked else broker_held["quantity"]
+        # MTF close for a position MODI4 itself opened (matches how it was
+        # bought); SELLFROMDP for a pre-existing/manual demat holding MODI4
+        # never bought, since that's not tracked as an MTF/NORMAL position.
+        product_type = "MTF" if self_tracked else "SELLFROMDP"
+        print(f"{symbol}: protective SELL (swing structure LL+LH), qty {qty}, product_type {product_type}")
+        place_order(
+            symbol=symbol, scripcode=scripcode, exchange="NSE",
+            transaction_type="SELL", quantity=qty,
+            entry_price=intraday["current_price"],
+            product_type=product_type,
+        )
+        protective_exit_state[symbol] = _today_str
 
     prev_signal = state.get(symbol)
 
@@ -147,7 +200,6 @@ for entry in watchlist:
             # the funded portion, which isn't reflected in our P&L tracking,
             # and not every stock is MTF-eligible (Motilal will reject those
             # orders safely, logged as live_failed).
-            scripcode = get_motilal_scripcode(symbol)
             if scripcode is None:
                 print(f"{symbol}: MODI4 order skipped, no Motilal scripcode found")
             elif signal == "BUY":
@@ -185,3 +237,7 @@ else:
 
 with open(STATE_FILE, "w") as f:
     json.dump(state, f, indent=2)
+
+protective_exit_state = {k: v for k, v in protective_exit_state.items() if v == _today_str}
+with open(PROTECTIVE_EXIT_STATE_FILE, "w") as f:
+    json.dump(protective_exit_state, f, indent=2)

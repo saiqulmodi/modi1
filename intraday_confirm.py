@@ -20,6 +20,16 @@ different things depending on how liquid a stock normally is:
     volume swings and a smaller multiple wouldn't reliably separate a real
     move from ordinary noise.
 
+Also checks a 3-day swing structure using daily bars:
+  - Higher High + Higher Low (HH+HL) over the last 3 days (today's
+    intraday high/low so far, vs. the prior two COMPLETE trading days)
+    is an ADDITIONAL required condition for confirms_bullish -- on top of
+    VWAP/ORB/volume, not instead of them.
+  - Lower Low + Lower High (LL+LH) over the same window is exposed as
+    swing_structure_bearish -- an INDEPENDENT protective-exit signal the
+    caller can act on for any held position, regardless of what the
+    score-based signal currently says.
+
 Fails closed: if there isn't enough intraday data yet (e.g. right at market
 open) or the candle fetch fails, get_intraday_confirmation() returns None
 and the caller should treat that as "no confirmation" rather than guessing.
@@ -97,11 +107,43 @@ def get_volume_threshold(symbol):
         return "mid_small_cap", MID_SMALL_CAP_VOLUME_RATIO
 
 
-def get_intraday_confirmation(token, symbol, daily_volume, exchange="NSE"):
+def check_swing_structure(daily_history, today_high, today_low):
     """
-    daily_volume: pandas Series of the last ~20 trading days' daily volume
-    (e.g. yf.Ticker(symbol + ".NS").history(period="30d")["Volume"].tail(20)),
-    used as the baseline for the volume-ratio check.
+    3-day swing structure: today's intraday high/low so far vs. the prior
+    two COMPLETE trading days (daily_history should NOT include today --
+    yfinance daily bars don't include the current incomplete day during
+    market hours, so a plain .tail(2) is normally safe).
+
+    Returns "bullish" (HH+HL: each day's high and low higher than the one
+    before), "bearish" (LL+LH: each day's low and high lower than the one
+    before), or None if there's not enough history or it's a mixed/no
+    clear pattern.
+    """
+    if daily_history is None or len(daily_history) < 2:
+        return None
+
+    last_two = daily_history.tail(2)
+    d1 = last_two.iloc[-1]   # yesterday (most recent complete day)
+    d2 = last_two.iloc[-2]   # day before yesterday
+
+    higher_highs = today_high > d1["High"] > d2["High"]
+    higher_lows = today_low > d1["Low"] > d2["Low"]
+    if higher_highs and higher_lows:
+        return "bullish"
+
+    lower_lows = today_low < d1["Low"] < d2["Low"]
+    lower_highs = today_high < d1["High"] < d2["High"]
+    if lower_lows and lower_highs:
+        return "bearish"
+
+    return None
+
+
+def get_intraday_confirmation(token, symbol, daily_history, exchange="NSE"):
+    """
+    daily_history: the daily OHLCV DataFrame for the last ~30 days (e.g.
+    yf.Ticker(symbol + ".NS").history(period="30d")) -- used both as the
+    volume baseline and for the 3-day swing structure check.
 
     Returns a dict describing today's intraday state, or None if there
     isn't enough data yet to judge anything (too early in the day, or the
@@ -127,6 +169,7 @@ def get_intraday_confirmation(token, symbol, daily_volume, exchange="NSE"):
         orb_breakout = None
 
     today_volume = df["volume"].sum()
+    daily_volume = daily_history["Volume"].tail(20) if daily_history is not None else None
     mean_volume = daily_volume.mean() if daily_volume is not None and len(daily_volume) else None
     volume_ratio = (today_volume / mean_volume) if mean_volume else None
 
@@ -134,6 +177,10 @@ def get_intraday_confirmation(token, symbol, daily_volume, exchange="NSE"):
     volume_confirms = volume_ratio is not None and volume_ratio >= ratio_threshold
 
     above_vwap = current_price > current_vwap
+
+    today_high = df["high"].max()
+    today_low = df["low"].min()
+    swing_structure = check_swing_structure(daily_history, today_high, today_low)
 
     return {
         "current_price": round(current_price, 2),
@@ -146,6 +193,8 @@ def get_intraday_confirmation(token, symbol, daily_volume, exchange="NSE"):
         "volume_ratio": round(volume_ratio, 2) if volume_ratio is not None else None,
         "volume_threshold": ratio_threshold,
         "volume_confirms": volume_confirms,
-        "confirms_bullish": above_vwap and orb_breakout == "UP" and volume_confirms,
+        "swing_structure": swing_structure,
+        "swing_structure_bearish": swing_structure == "bearish",
+        "confirms_bullish": above_vwap and orb_breakout == "UP" and volume_confirms and swing_structure == "bullish",
         "confirms_bearish": (not above_vwap) and orb_breakout == "DOWN" and volume_confirms,
     }
