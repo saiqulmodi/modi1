@@ -5,11 +5,73 @@ import json
 import pandas as pd
 import requests
 import os
-from motilal_login import headers, auth_token
-from angel_data import get_angel_ltp
+import hashlib
+import pyotp
+from motilal_login import (
+    headers, USER_ID, PASSWORD as MOTILAL_PASSWORD, DOB,
+    API_KEY as MOTILAL_API_KEY, TOTP_SECRET as MOTILAL_TOTP_SECRET,
+    login_url as MOTILAL_LOGIN_URL,
+)
+from angel_data import find_symbol_token
+from angel_login import (
+    headers as angel_headers, CLIENT_ID, PASSWORD as ANGEL_PASSWORD,
+    TOTP_SECRET as ANGEL_TOTP_SECRET, login_url as ANGEL_LOGIN_URL,
+)
 from concurrent.futures import ThreadPoolExecutor
 
 st.set_page_config(page_title="MODI1 Dashboard", layout="wide")
+
+# motilal_login.py/angel_login.py fetch their auth token ONCE, at import
+# time. That's fine for short-lived scripts (Task Scheduler starts a fresh
+# process every run), but this dashboard runs as a long-lived NSSM service
+# that's only imported once per service start -- after a few hours the
+# token dies and every live-price call fails silently, which is what was
+# making prices and the Gainers/Losers section vanish. These re-run the
+# same login fresh, cached for 1 hour so the dashboard keeps a live token
+# indefinitely instead of running on an increasingly stale one.
+
+
+@st.cache_resource(ttl=3600)
+def get_fresh_motilal_token():
+    hashed_password = hashlib.sha256((MOTILAL_PASSWORD + MOTILAL_API_KEY).encode()).hexdigest()
+    totp_code = pyotp.TOTP(MOTILAL_TOTP_SECRET).now()
+    body = {"userid": USER_ID, "password": hashed_password, "2FA": DOB, "totp": totp_code}
+    try:
+        response = requests.post(MOTILAL_LOGIN_URL, json=body, headers=headers, timeout=10)
+        data = response.json()
+    except Exception:
+        return None
+    return data.get("AuthToken") if data.get("status") == "SUCCESS" else None
+
+
+@st.cache_resource(ttl=3600)
+def get_fresh_angel_token():
+    totp_code = pyotp.TOTP(ANGEL_TOTP_SECRET).now()
+    body = {"clientcode": CLIENT_ID, "password": ANGEL_PASSWORD, "totp": totp_code}
+    try:
+        response = requests.post(ANGEL_LOGIN_URL, json=body, headers=angel_headers, timeout=10)
+        data = response.json()
+    except Exception:
+        return None
+    return data["data"]["jwtToken"] if data.get("status") else None
+
+
+def get_angel_ltp_fresh(symbol, suffix="-EQ"):
+    token = find_symbol_token(symbol, suffix)
+    if not token:
+        return None
+    angel_token = get_fresh_angel_token()
+    if not angel_token:
+        return None
+    url = "https://apiconnect.angelone.in/rest/secure/angelbroking/order/v1/getLtpData"
+    ltp_headers = angel_headers.copy()
+    ltp_headers["Authorization"] = f"Bearer {angel_token}"
+    body = {"exchange": "NSE", "tradingsymbol": symbol + suffix, "symboltoken": token}
+    try:
+        response = requests.post(url, json=body, headers=ltp_headers, timeout=10)
+        return response.json()
+    except Exception:
+        return None
 # Full render (watchlist + gainers/losers) measured at ~50s; a 60s refresh
 # was cutting it off mid-render before the Gainers/Losers section (rendered
 # last) ever finished, so it silently never appeared. 150s gives real margin.
@@ -42,8 +104,9 @@ def get_scripcode(symbol):
 
 def get_live_price(scripcode, symbol):
     ltp_url = "https://openapi.motilaloswal.com/rest/report/v3/getltpdata"
+    fresh_token = get_fresh_motilal_token()
     ltp_headers = headers.copy()
-    ltp_headers["Authorization"] = auth_token
+    ltp_headers["Authorization"] = fresh_token
     body = {"clientcode": "", "exchange": "NSE", "scripcode": scripcode}
     try:
         response = requests.post(ltp_url, json=body, headers=ltp_headers, timeout=10)
@@ -57,7 +120,7 @@ def get_live_price(scripcode, symbol):
     except Exception:
         pass
 
-    angel_result = get_angel_ltp(symbol)
+    angel_result = get_angel_ltp_fresh(symbol)
     if angel_result and angel_result.get("status"):
         d = angel_result["data"]
         ltp = d["ltp"]
