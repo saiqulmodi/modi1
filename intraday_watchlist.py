@@ -98,4 +98,9 @@ INTRADAY_SYMBOLS = [
     "ITDCEM", "JKIL", "JKLAKSHMI", "KEC", "KNRCON", "NCC", "NITCO",
     "NUVOCO", "ORIENTBELL", "PNCINFRA", "PRINCEPIPE", "RITES",
     "STARCEMENT", "TEXRAIL",
+
+    # Added by explicit request after showing up in MODI3's order-win/
+    # results news coverage (JBFIND, CEIGALL, AHLWEST) plus two more asked
+    # for directly (PITTIENG, VEDL).
+    "JBFIND", "CEIGALL", "AHLWEST", "PITTIENG", "VEDL",
 ]
