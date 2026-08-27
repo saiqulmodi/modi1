@@ -103,4 +103,19 @@ INTRADAY_SYMBOLS = [
     # results news coverage (JBFIND, CEIGALL, AHLWEST) plus two more asked
     # for directly (PITTIENG, VEDL).
     "JBFIND", "CEIGALL", "AHLWEST", "PITTIENG", "VEDL",
+
+    # Added by explicit request (large batch). A few needed correcting from
+    # the names given: MOLDTEKPACK -> MOLDTKPAC, CAPPACIT INFRA -> CAPACITE,
+    # TATA TECHNOLOGY -> TATATECH, AIA -> AIAENG, NEPHROCARE -> NEPHROPLUS,
+    # IFB -> IFBIND, KIRLOSBRO -> KIRLOSBROS, RAYMONREL -> RAYMONDREL.
+    # "JIOFINBELRISE" and "SPALSUMICHEM" were two names run together without
+    # a comma -- split into BELRISE (JIOFIN was already on the list) and
+    # SPAL + SUMICHEM (SUMICHEM was already on the list) respectively.
+    "JKPAPER", "AUBANK", "MAHSEAMLES", "AVANTIFEED", "BASF", "RAIN",
+    "MOLDTKPAC", "CAPACITE", "JSWINFRA", "TATATECH", "AIAENG", "BELRISE",
+    "ATHERENERG", "NEPHROPLUS", "MANINFRA", "CIEINDIA", "DOMS", "ENRIN",
+    "ENTERO", "EPACK", "GVT&D", "HARSHA", "HEG", "HIRECT", "IFBIND",
+    "INTELLECT", "KIRLOSBROS", "KRISHANA", "LALPATHLAB", "MAHLIFE",
+    "MIDHANI", "POWERMECH", "RAYMONDLSL", "RAYMONDREL", "SAFARI", "SIS",
+    "SOUTHBANK", "SPAL", "SKFINDIA", "SJS", "SHANKARA",
 ]
