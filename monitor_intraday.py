@@ -1,6 +1,6 @@
 from angel_data import get_angel_ltp
 from motilal_login import headers, auth_token
-from intraday_watchlist import INTRADAY_SYMBOLS
+from intraday_watchlist import INTRADAY_SYMBOLS, ANGEL_ONLY_SYMBOLS
 from send_telegram import send_telegram_message
 import yfinance as yf
 import json
@@ -10,17 +10,6 @@ import requests
 from datetime import datetime
 import os
 import sys
-
-# Stocks not present in Motilal's nse_scrips.csv - route directly to Angel One.
-# Value is the Angel symbol suffix: "-EQ" normal, "-BE" = trade-to-trade
-# (T2T stocks cannot be squared off intraday - alerts only, no auto-trade logic).
-ANGEL_ONLY_SYMBOLS = {
-    "DBREALTY": "-EQ",
-    "IDEAFORGE": "-EQ",
-    "STLTECH": "-BE",
-    "MTARTECH": "-BE",
-    "DIACABS": "-BE",
-}
 
 LOCK_FILE = "intraday_monitor.lock"
 STALE_MINUTES = 15
@@ -117,7 +106,7 @@ try:
             direction = "up" if pct_change > 0 else "down"
             alerts.append(f"Price {direction} {name}: {pct_change:.2f}% (LTP {ltp:.2f})")
 
-    # ---- Angel-only loop: stocks missing from nse_scrips.csv (DBREALTY, IDEAFORGE, STLTECH, MTARTECH, DIACABS) ----
+    # ---- Angel-only loop: stocks missing as "EQ" from nse_scrips.csv (see ANGEL_ONLY_SYMBOLS in intraday_watchlist.py) ----
     # Price-move alerts only - Angel's LTP endpoint doesn't return volume data.
     for name, suffix in ANGEL_ONLY_SYMBOLS.items():
         time.sleep(0.5)

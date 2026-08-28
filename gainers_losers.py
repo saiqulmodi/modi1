@@ -1,6 +1,6 @@
 from angel_data import get_angel_ltp
 from motilal_login import headers, auth_token
-from intraday_watchlist import INTRADAY_SYMBOLS
+from intraday_watchlist import INTRADAY_SYMBOLS, ANGEL_ONLY_SYMBOLS
 import pandas as pd
 import time
 import requests
@@ -12,6 +12,8 @@ def load_intraday_scripcodes(symbols_list, scrips_path="nse_scrips.csv"):
     equities = scrips[(scrips["exchangename"] == "NSE") & (scrips["optiontype"] == "EQ")]
     stocks = {}
     for symbol in symbols_list:
+        if symbol in ANGEL_ONLY_SYMBOLS:
+            continue  # handled separately, not via Motilal scripcodes
         match = equities[equities["scripshortname"] == symbol]
         if not match.empty:
             stocks[symbol] = int(match.iloc[0]["scripcode"])
@@ -51,6 +53,23 @@ def get_all_changes():
             ltp = d["ltp"]
             prev_close = d["close"]
 
+        if not prev_close:
+            continue
+
+        pct_change = ((ltp - prev_close) / prev_close) * 100
+        results.append({"symbol": name, "ltp": round(ltp, 2), "pct_change": round(pct_change, 2)})
+
+    # ---- Angel-only symbols: missing as "EQ" from nse_scrips.csv (see ANGEL_ONLY_SYMBOLS in intraday_watchlist.py) ----
+    for name, suffix in ANGEL_ONLY_SYMBOLS.items():
+        time.sleep(0.5)
+        angel_result = get_angel_ltp(name, suffix=suffix)
+        if not angel_result or not angel_result.get("status"):
+            print(f"{name}{suffix}: Angel One lookup failed, skipping")
+            continue
+
+        d = angel_result["data"]
+        ltp = d["ltp"]
+        prev_close = d["close"]
         if not prev_close:
             continue
 

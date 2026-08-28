@@ -64,8 +64,8 @@ INTRADAY_SYMBOLS = [
     # (not from an official index -- worth a spot-check).
     "ABBOTINDIA", "AJANTPHARM", "ALKEM", "AUROPHARMA", "FORTIS", "GLENMARK",
     "LAURUSLABS", "LUPIN", "SYNGENE", "TORNTPHARM", "WOCKPHARMA",
-    "AARTIPHARM", "HIKAL", "SUVENPHAR", "GLOBALHEALTH", "KIMS", "SHALBY",
-    "YATHARTH",
+    "AARTIPHARM", "HIKAL", "KIMS", "SHALBY",
+    "YATHARTH", "MEDANTA",
 
     # Textiles (general knowledge, not an official index -- worth a spot-check).
     "TRIDENT", "RAYMOND", "PAGEIND", "SUTLEJTEX", "SIYSIL", "NITINSPIN",
@@ -78,14 +78,15 @@ INTRADAY_SYMBOLS = [
     # top ancillaries) plus additional dedicated ancillary names from
     # general knowledge (not from an official index -- worth a spot-check).
     "BHARATFORG", "BOSCHLTD", "EXIDEIND", "HEROMOTOCO", "TIINDIA",
-    "AMARAJABAT", "APOLLOTYRE", "AUTOAXLES", "FIEMIND", "JAMNAAUTO",
-    "LUMAXIND", "MAHINDCIE", "MRF", "RAJRATAN", "RANEBRAKE", "RANEHOLDIN",
+    "APOLLOTYRE", "AUTOAXLES", "FIEMIND", "JAMNAAUTO",
+    "LUMAXIND", "MRF", "RAJRATAN", "RANEBRAKE", "RANEHOLDIN",
     "RICOAUTO", "SSWL", "SUBROS", "SUNDRMFAST", "VARROC",
 
     # Data center theme (genuinely niche in listed Indian markets -- most
     # pure-play data center operators aren't public; these are the closest
-    # listed proxies, from general knowledge not an official index).
-    "SIFY", "RAILTEL", "KAYNES",
+    # listed proxies, from general knowledge not an official index). SIFY
+    # dropped -- it's NASDAQ-listed (ADR) only, not on NSE.
+    "RAILTEL", "KAYNES",
 
     # Construction/housing/railway/bridges + ancillaries (cement, paint,
     # tiles, pipes): NIFTY Realty + NIFTY Infra (official NSE index lists)
@@ -93,7 +94,7 @@ INTRADAY_SYMBOLS = [
     # worth a spot-check).
     "ABREL", "BPCL", "CGPOWER", "DLF", "GAIL", "HINDPETRO", "INDUSTOWER",
     "IOC", "PHOENIXLTD", "SHREECEM", "SUZLON",
-    "ACC", "AKZOINDIA", "ASHOKA", "BERGEPAINT", "BIRLACORPN", "CERA",
+    "ACC", "JSWDULUX", "ASHOKA", "BERGEPAINT", "BIRLACORPN", "CERA",
     "DALBHARAT", "DBL", "FINPIPE", "GRINFRA", "INDIACEM", "IRB", "IRCON",
     "ITDCEM", "JKIL", "JKLAKSHMI", "KEC", "KNRCON", "NCC", "NITCO",
     "NUVOCO", "ORIENTBELL", "PNCINFRA", "PRINCEPIPE", "RITES",
@@ -101,8 +102,10 @@ INTRADAY_SYMBOLS = [
 
     # Added by explicit request after showing up in MODI3's order-win/
     # results news coverage (JBFIND, CEIGALL, AHLWEST) plus two more asked
-    # for directly (PITTIENG, VEDL).
-    "JBFIND", "CEIGALL", "AHLWEST", "PITTIENG", "VEDL",
+    # for directly (PITTIENG, VEDL). JBFIND dropped -- not a real NSE symbol;
+    # the intended company (J.B. Chemicals, JBCHEPHARM) has since amalgamated
+    # into Torrent Pharma, already on this list as TORNTPHARM.
+    "CEIGALL", "AHLWEST", "PITTIENG", "VEDL",
 
     # Added by explicit request (large batch). A few needed correcting from
     # the names given: MOLDTEKPACK -> MOLDTKPAC, CAPPACIT INFRA -> CAPACITE,
@@ -126,4 +129,24 @@ INTRADAY_SYMBOLS = [
     "VSTTILLERS", "TIMEX", "TENNIND", "CANFINHOME", "J&KBANK", "BANKBARODA",
     "HDFCAMC", "CARRARO", "PSPPROJECT", "TALBROAUTO", "JKTYRE", "GNA",
     "PRICOLLTD", "ESCORTS", "SIRCA", "GOODLUCK", "STYLAMIND", "EPACKPEB",
+
+    # Added by explicit request. TVSMOTOR and WOCKPHARMA already present.
+    "MASTEK",
 ]
+
+# Symbols not present as "EQ" in Motilal's nse_scrips.csv -- routed straight to
+# Angel One instead of a Motilal scripcode lookup. Value is the Angel symbol
+# suffix: "-EQ" normal, "-BE" = trade-to-trade (T2T stocks cannot be squared
+# off intraday -- alerts only, no auto-trade logic). Two symbols confirmed
+# still missing from BOTH nse_scrips.csv and Angel's scrip master as of
+# 2026-08-28 and left unresolved rather than guessed: ITDCEM (ITD Cementation)
+# and RANEBRAKE (Rane Brake Lining, current NSE symbol is actually "RBL").
+ANGEL_ONLY_SYMBOLS = {
+    "DBREALTY": "-EQ",
+    "IDEAFORGE": "-EQ",
+    "STLTECH": "-BE",
+    "MTARTECH": "-BE",
+    "DIACABS": "-BE",
+    "SUTLEJTEX": "-BE",
+    "AHLWEST": "-BE",
+}
