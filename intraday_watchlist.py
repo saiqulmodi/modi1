@@ -132,6 +132,23 @@ INTRADAY_SYMBOLS = [
 
     # Added by explicit request. TVSMOTOR and WOCKPHARMA already present.
     "MASTEK",
+
+    # Added by explicit request (large batch). Corrections: CESE -> CESC,
+    # SURYARROSNI -> SURYAROSNI, "KSOLVESNESTLEIND" was two names run
+    # together without a comma -- split into KSOLVES (NESTLEIND already
+    # present). "NEWZENSSWL" couldn't be confidently resolved to a real
+    # symbol -- skipped rather than guessed (SSWL is already present
+    # separately). LEAPIND, VALIANT (real ticker: VALIANTLAB), KRN, DLINK
+    # (real ticker: DLINKINDIA), KAPTON (real ticker: KAPSTON), and
+    # SUNSHIEL aren't in Motilal's scrip file (dated 09-Aug-2026) but are
+    # in Angel's -- see ANGEL_ONLY_SYMBOLS below.
+    "CYIENT", "FINCABLES", "SGMART", "MPSLTD", "VIMTALABS", "PAYTM",
+    "ROSSARI", "TATVA", "ADANIPOWER", "GROWW", "SAPPHIRE", "GREENPLY",
+    "SAKAR", "GESHIP", "CESC", "PNBGILTS", "BHARATRAS", "VENUSPIPES",
+    "EMSLIMITED", "GLAXO", "KKCL", "HDBFS", "BAJAJHFL", "BAJAJCON",
+    "GRANULES", "HESTERBIO", "OFSS", "MPHASIS", "PARKHOSPS", "SHARDAMOTR",
+    "ERIS", "POLICYBZR", "INDIASHLTR", "SHAILY", "BECTORFOOD", "REDTAPE",
+    "TCPLPACK", "SURYAROSNI", "TBZ", "KSOLVES",
 ]
 
 # Symbols not present as "EQ" in Motilal's nse_scrips.csv -- routed straight to
@@ -149,4 +166,10 @@ ANGEL_ONLY_SYMBOLS = {
     "DIACABS": "-BE",
     "SUTLEJTEX": "-BE",
     "AHLWEST": "-BE",
+    "KRN": "-EQ",
+    "LEAPIND": "-EQ",
+    "SUNSHIEL": "-EQ",
+    "VALIANTLAB": "-EQ",
+    "DLINKINDIA": "-EQ",
+    "KAPSTON": "-EQ",
 }
