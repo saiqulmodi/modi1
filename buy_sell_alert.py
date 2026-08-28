@@ -21,6 +21,17 @@ This avoids firing an alert purely off daily-bar data when nothing is
 actually happening intraday. If intraday data can't be fetched (e.g. too
 early in the session), the signal is held back rather than alerted on blind.
 
+Two more signals run independently of the above, regardless of the score
+verdict:
+  - Protective SELL (automated, held positions only): fires on either the
+    existing 3-day Lower-Low+Lower-High continuation, OR a 6+ day
+    Higher-High+Higher-Low uptrend that just reversed into a same-day
+    Lower-Low+Lower-High (trend exhaustion). Either is enough to close
+    the position for real, same as the score-based SELL/AVOID path.
+  - Trend-reversal BUY (alert-only, never auto-traded): a 6+ day
+    Lower-Low+Lower-High downtrend that just reversed into a same-day
+    Higher-High+Higher-Low. Sent as a manual Telegram suggestion only.
+
 Only fires during market hours. Tracks last-seen signal per symbol in
 buy_sell_alerted_state.json so it only alerts on a change, not every run.
 """
@@ -56,6 +67,7 @@ from holdings import get_broker_holdings, get_broker_positions
 WATCHLIST_FILE = "watchlist.json"
 STATE_FILE = "buy_sell_alerted_state.json"
 PROTECTIVE_EXIT_STATE_FILE = "protective_exit_state.json"
+TREND_REVERSAL_STATE_FILE = "trend_reversal_alerted_state.json"
 
 _nse_scrips = pd.read_csv("nse_scrips.csv", low_memory=False)
 _equities = _nse_scrips[(_nse_scrips["exchangename"] == "NSE") & (_nse_scrips["optiontype"] == "EQ")]
@@ -106,6 +118,12 @@ if os.path.exists(PROTECTIVE_EXIT_STATE_FILE):
 else:
     protective_exit_state = {}
 
+if os.path.exists(TREND_REVERSAL_STATE_FILE):
+    with open(TREND_REVERSAL_STATE_FILE, "r") as f:
+        trend_reversal_state = json.load(f)
+else:
+    trend_reversal_state = {}
+
 _today_str = _now.strftime("%Y-%m-%d")
 
 # Real Motilal demat holdings AND MTF positions, fetched once per run --
@@ -132,17 +150,20 @@ for entry in watchlist:
     dp_held = broker_holdings.get(str(scripcode)) if scripcode is not None else None
     is_held = self_tracked is not None or mtf_held is not None or dp_held is not None
 
+    # Intraday confirmation is fetched for every watchlist entry (only
+    # ~10 symbols, cheap) rather than just when signal/holding requires
+    # it, since the independent trend-reversal BUY check below needs it
+    # for ALL candidates, not just the ones with an active score signal.
+    token = find_symbol_token(symbol)
     intraday = None
-    if signal in ("BUY", "SELL/AVOID") or is_held:
-        token = find_symbol_token(symbol)
-        if token:
-            hist = yf.Ticker(symbol + ".NS").history(period="30d")
-            intraday = get_intraday_confirmation(token, symbol, hist)
+    if token:
+        hist = yf.Ticker(symbol + ".NS").history(period="30d")
+        intraday = get_intraday_confirmation(token, symbol, hist)
 
+    if signal in ("BUY", "SELL/AVOID"):
         if intraday is None:
-            if signal in ("BUY", "SELL/AVOID"):
-                print(f"{symbol}: {signal} signal held back, no intraday confirmation data available")
-                signal = "HOLD"
+            print(f"{symbol}: {signal} signal held back, no intraday confirmation data available")
+            signal = "HOLD"
         elif signal == "BUY" and not intraday["confirms_bullish"]:
             print(f"{symbol}: BUY signal held back, intraday action doesn't confirm ({intraday})")
             signal = "HOLD"
@@ -150,39 +171,60 @@ for entry in watchlist:
             print(f"{symbol}: SELL/AVOID signal held back, intraday action doesn't confirm ({intraday})")
             signal = "HOLD"
 
-    # Independent protective exit: Lower-Low + Lower-High over the last 3
-    # days, for ANY currently held position -- regardless of what the
-    # score-based signal above says (a stock can be structurally breaking
-    # down while the score/ML verdict still reads HOLD or even BUY on
-    # stale daily data). Fires at most once per symbol per day so a
-    # broker-holdings entry that hasn't settled/updated yet by the next
-    # 5-minute cycle doesn't get sold again before the position actually
-    # clears.
+    # Independent protective exit, for ANY currently held position --
+    # regardless of what the score-based signal above says (a stock can be
+    # structurally breaking down while the score/ML verdict still reads
+    # HOLD or even BUY on stale daily data). Two independent triggers, either
+    # one is enough: the existing 3-day Lower-Low+Lower-High continuation, or
+    # a 6+ day Higher-High+Higher-Low uptrend that just reversed into a
+    # Lower-Low+Lower-High day (trend exhaustion). Fires at most once per
+    # symbol per day so a broker-holdings entry that hasn't settled/updated
+    # yet by the next 5-minute cycle doesn't get sold again before the
+    # position actually clears. SELL is only ever applied to a position
+    # already held -- never a fresh short entry.
+    if is_held and scripcode is not None and intraday is not None and protective_exit_state.get(symbol) != _today_str:
+        exit_reasons = []
+        if intraday.get("swing_structure_bearish"):
+            exit_reasons.append("3-day LL+LH")
+        if intraday.get("trend_reversal_bearish"):
+            exit_reasons.append("6+ day HH+HL uptrend reversed")
+
+        if exit_reasons:
+            # MTF close for a position MODI4 itself opened, or any pre-existing
+            # MTF position the broker already shows as a margin position
+            # (matches how it's actually held); SELLFROMDP only for a plain
+            # DP/delivery holding with no margin position behind it.
+            if self_tracked:
+                qty, product_type = self_tracked["quantity"], "MTF"
+            elif mtf_held:
+                qty, product_type = mtf_held["quantity"], "MTF"
+            else:
+                qty, product_type = dp_held["quantity"], "SELLFROMDP"
+            reason_str = " + ".join(exit_reasons)
+            print(f"{symbol}: protective SELL ({reason_str}), qty {qty}, product_type {product_type}")
+            place_order(
+                symbol=symbol, scripcode=scripcode, exchange="NSE",
+                transaction_type="SELL", quantity=qty,
+                entry_price=intraday["current_price"],
+                product_type=product_type,
+            )
+            protective_exit_state[symbol] = _today_str
+
+    # Independent, ALERT-ONLY (never auto-traded): a 6+ day Lower-Low+Lower-High
+    # downtrend that just reversed into a Higher-High+Higher-Low day. Unlike
+    # the score-based BUY above, this is purely a Telegram suggestion for you
+    # to act on manually -- fires at most once per symbol per day.
     if (
-        is_held
-        and scripcode is not None
-        and intraday is not None
-        and intraday.get("swing_structure_bearish")
-        and protective_exit_state.get(symbol) != _today_str
+        intraday is not None
+        and intraday.get("trend_reversal_bullish")
+        and trend_reversal_state.get(symbol) != _today_str
     ):
-        # MTF close for a position MODI4 itself opened, or any pre-existing
-        # MTF position the broker already shows as a margin position
-        # (matches how it's actually held); SELLFROMDP only for a plain
-        # DP/delivery holding with no margin position behind it.
-        if self_tracked:
-            qty, product_type = self_tracked["quantity"], "MTF"
-        elif mtf_held:
-            qty, product_type = mtf_held["quantity"], "MTF"
-        else:
-            qty, product_type = dp_held["quantity"], "SELLFROMDP"
-        print(f"{symbol}: protective SELL (swing structure LL+LH), qty {qty}, product_type {product_type}")
-        place_order(
-            symbol=symbol, scripcode=scripcode, exchange="NSE",
-            transaction_type="SELL", quantity=qty,
-            entry_price=intraday["current_price"],
-            product_type=product_type,
+        new_alerts.append(
+            f"\U0001f7e1 {symbol} ({entry['name']}): possible BUY (manual) -- "
+            f"6+ day downtrend just reversed (Higher-High + Higher-Low today), "
+            f"current price {intraday['current_price']}"
         )
-        protective_exit_state[symbol] = _today_str
+        trend_reversal_state[symbol] = _today_str
 
     prev_signal = state.get(symbol)
 
@@ -250,3 +292,7 @@ with open(STATE_FILE, "w") as f:
 protective_exit_state = {k: v for k, v in protective_exit_state.items() if v == _today_str}
 with open(PROTECTIVE_EXIT_STATE_FILE, "w") as f:
     json.dump(protective_exit_state, f, indent=2)
+
+trend_reversal_state = {k: v for k, v in trend_reversal_state.items() if v == _today_str}
+with open(TREND_REVERSAL_STATE_FILE, "w") as f:
+    json.dump(trend_reversal_state, f, indent=2)

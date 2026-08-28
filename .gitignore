@@ -25,5 +25,6 @@ logs/
 alt_data_momentum.csv
 buy_sell_alerted_state.json
 protective_exit_state.json
+trend_reversal_alerted_state.json
 momentum_alerted_state.json
 gainers_losers.json

@@ -139,6 +139,52 @@ def check_swing_structure(daily_history, today_high, today_low):
     return None
 
 
+def check_trend_reversal(daily_history, today_high, today_low, min_streak_days=6):
+    """
+    Trend-exhaustion reversal: an extended (6+ trading day) Lower-Low +
+    Lower-High downtrend that then reverses -- today's high/low so far
+    both come in HIGHER than the last day of that downtrend streak (a
+    same-day Higher-High AND Higher-Low together, not just one or the
+    other). Mirror for an extended Higher-High + Higher-Low uptrend that
+    reverses into a same-day Lower-Low + Lower-High.
+
+    This is a different, longer-horizon signal from check_swing_structure()
+    above (which looks for 3-day CONTINUATION, not a 6+ day reversal) --
+    the two are independent, not layered on each other.
+
+    Returns "bullish_reversal", "bearish_reversal", or None.
+    """
+    if daily_history is None or len(daily_history) < min_streak_days + 1:
+        return None
+
+    highs = list(daily_history["High"]) + [today_high]
+    lows = list(daily_history["Low"]) + [today_low]
+    n = len(highs)
+
+    down_streak = 0
+    i = n - 2
+    while i > 0 and highs[i] < highs[i - 1] and lows[i] < lows[i - 1]:
+        down_streak += 1
+        i -= 1
+
+    up_streak = 0
+    i = n - 2
+    while i > 0 and highs[i] > highs[i - 1] and lows[i] > lows[i - 1]:
+        up_streak += 1
+        i -= 1
+
+    latest_higher_high = highs[-1] > highs[-2]
+    latest_higher_low = lows[-1] > lows[-2]
+    latest_lower_high = highs[-1] < highs[-2]
+    latest_lower_low = lows[-1] < lows[-2]
+
+    if down_streak >= min_streak_days and latest_higher_high and latest_higher_low:
+        return "bullish_reversal"
+    if up_streak >= min_streak_days and latest_lower_high and latest_lower_low:
+        return "bearish_reversal"
+    return None
+
+
 def get_intraday_confirmation(token, symbol, daily_history, exchange="NSE"):
     """
     daily_history: the daily OHLCV DataFrame for the last ~30 days (e.g.
@@ -181,6 +227,7 @@ def get_intraday_confirmation(token, symbol, daily_history, exchange="NSE"):
     today_high = df["high"].max()
     today_low = df["low"].min()
     swing_structure = check_swing_structure(daily_history, today_high, today_low)
+    trend_reversal = check_trend_reversal(daily_history, today_high, today_low)
 
     return {
         "current_price": round(current_price, 2),
@@ -197,4 +244,8 @@ def get_intraday_confirmation(token, symbol, daily_history, exchange="NSE"):
         "swing_structure_bearish": swing_structure == "bearish",
         "confirms_bullish": above_vwap and orb_breakout == "UP" and volume_confirms and swing_structure == "bullish",
         "confirms_bearish": (not above_vwap) and orb_breakout == "DOWN" and volume_confirms,
+        # Independent of everything above: a 6+ day trend-exhaustion
+        "trend_reversal": trend_reversal,
+        "trend_reversal_bullish": trend_reversal == "bullish_reversal",
+        "trend_reversal_bearish": trend_reversal == "bearish_reversal",
     }
