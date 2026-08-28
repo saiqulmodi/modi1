@@ -187,7 +187,7 @@ for entry in watchlist:
         if intraday.get("swing_structure_bearish"):
             exit_reasons.append("3-day LL+LH")
         if intraday.get("trend_reversal_bearish"):
-            exit_reasons.append("6+ day HH+HL uptrend reversed")
+            exit_reasons.append("TREND REVERSAL: 6+ day HH+HL uptrend just reversed")
 
         if exit_reasons:
             # MTF close for a position MODI4 itself opened, or any pre-existing
@@ -209,6 +209,10 @@ for entry in watchlist:
                 product_type=product_type,
             )
             protective_exit_state[symbol] = _today_str
+            new_alerts.append(
+                f"\U0001f534 {symbol} ({entry['name']}): AUTOMATED SELL executed ({reason_str}) -- "
+                f"qty {qty}, price {intraday['current_price']}"
+            )
 
     # Independent, ALERT-ONLY (never auto-traded): a 6+ day Lower-Low+Lower-High
     # downtrend that just reversed into a Higher-High+Higher-Low day. Unlike
@@ -220,7 +224,7 @@ for entry in watchlist:
         and trend_reversal_state.get(symbol) != _today_str
     ):
         new_alerts.append(
-            f"\U0001f7e1 {symbol} ({entry['name']}): possible BUY (manual) -- "
+            f"\U0001f7e1 {symbol} ({entry['name']}): TREND REVERSAL BUY (manual, not auto-traded) -- "
             f"6+ day downtrend just reversed (Higher-High + Higher-Low today), "
             f"current price {intraday['current_price']}"
         )
