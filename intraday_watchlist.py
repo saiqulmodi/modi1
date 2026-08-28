@@ -118,4 +118,12 @@ INTRADAY_SYMBOLS = [
     "INTELLECT", "KIRLOSBROS", "KRISHANA", "LALPATHLAB", "MAHLIFE",
     "MIDHANI", "POWERMECH", "RAYMONDLSL", "RAYMONDREL", "SAFARI", "SIS",
     "SOUTHBANK", "SPAL", "SKFINDIA", "SJS", "SHANKARA",
+
+    # Added by explicit request. Corrections: STYLAM -> STYLAMIND,
+    # PRICOL -> PRICOLLTD. "CP Plus" (CCTV brand) requested but not found
+    # listed on NSE at all -- skipped, not guessed.
+    "SUPRIYA", "AKUMS", "RAMRAT", "DPABHUSHAN", "NELCAST", "PREMIERENE",
+    "VSTTILLERS", "TIMEX", "TENNIND", "CANFINHOME", "J&KBANK", "BANKBARODA",
+    "HDFCAMC", "CARRARO", "PSPPROJECT", "TALBROAUTO", "JKTYRE", "GNA",
+    "PRICOLLTD", "ESCORTS", "SIRCA", "GOODLUCK", "STYLAMIND", "EPACKPEB",
 ]
