@@ -1,0 +1,124 @@
+[
+  {
+    "symbol": "CARYSIL",
+    "name": "Carysil Limited",
+    "score": 6,
+    "notes": [
+      "PEG 0.79 (undervalued)",
+      "low debt (46)",
+      "revenue growth 15.5%",
+      "uptrend (50MA>200MA)",
+      "RSI 19 (oversold)"
+    ]
+  },
+  {
+    "symbol": "CASTROLIND",
+    "name": "Castrol India Limited",
+    "score": 6,
+    "notes": [
+      "PEG 0.41 (undervalued)",
+      "low debt (3)",
+      "strong ROE (57.0%)",
+      "revenue growth 25.0%",
+      "uptrend (50MA>200MA)",
+      "RSI 41 (neutral)"
+    ]
+  },
+  {
+    "symbol": "TRAVELFOOD",
+    "name": "Travel Food Services Limited",
+    "score": 6,
+    "notes": [
+      "PEG 0.95 (undervalued)",
+      "low debt (17)",
+      "revenue growth 20.6%",
+      "uptrend (50MA>200MA)",
+      "RSI 25 (oversold)"
+    ]
+  },
+  {
+    "symbol": "SSWL",
+    "name": "Steel Strips Wheels Limited",
+    "score": 6,
+    "notes": [
+      "PEG 0.47 (undervalued)",
+      "low debt (46)",
+      "revenue growth 27.2%",
+      "uptrend (50MA>200MA)",
+      "RSI 26 (oversold)"
+    ]
+  },
+  {
+    "symbol": "MAHLIFE",
+    "name": "Mahindra Lifespace Developers Limited",
+    "score": 6,
+    "notes": [
+      "PEG 0.64 (undervalued)",
+      "low debt (18)",
+      "revenue growth 2909.5%",
+      "uptrend (50MA>200MA)",
+      "RSI 26 (oversold)"
+    ]
+  },
+  {
+    "symbol": "TATVA",
+    "name": "Tatva Chintan Pharma Chem Limited",
+    "score": 6,
+    "notes": [
+      "PEG 0.53 (undervalued)",
+      "low debt (15)",
+      "revenue growth 42.9%",
+      "uptrend (50MA>200MA)",
+      "RSI 25 (oversold)"
+    ]
+  },
+  {
+    "symbol": "OFSS",
+    "name": "Oracle Financial Services Software Limited",
+    "score": 6,
+    "notes": [
+      "PEG 0.26 (undervalued)",
+      "low debt (1)",
+      "strong ROE (49.9%)",
+      "revenue growth 68.7%",
+      "uptrend (50MA>200MA)",
+      "RSI 57 (neutral)"
+    ]
+  },
+  {
+    "symbol": "LENSKART",
+    "name": "Lenskart Solutions Limited",
+    "score": 5,
+    "notes": [
+      "PEG 0.66 (undervalued)",
+      "low debt (35)",
+      "revenue growth 43.3%",
+      "uptrend (50MA>200MA)",
+      "RSI 72 (overbought)"
+    ]
+  },
+  {
+    "symbol": "GLAND",
+    "name": "Gland Pharma Limited",
+    "score": 5,
+    "notes": [
+      "PEG 0.90 (undervalued)",
+      "low debt (3)",
+      "revenue growth 19.6%",
+      "uptrend (50MA>200MA)",
+      "RSI 67 (neutral)"
+    ]
+  },
+  {
+    "symbol": "KAJARIACER",
+    "name": "Kajaria Ceramics Limited",
+    "score": 5,
+    "notes": [
+      "PEG 0.64 (undervalued)",
+      "low debt (7)",
+      "revenue growth 20.4%",
+      "uptrend (50MA>200MA)",
+      "RSI 58 (neutral)"
+    ]
+  }
+]
