@@ -1,5 +1,6 @@
 from ml_predict import get_ml_probability
 from streamlit_autorefresh import st_autorefresh
+from intraday_watchlist import INTRADAY_SYMBOLS, ANGEL_ONLY_SYMBOLS
 import streamlit as st
 import json
 import pandas as pd
@@ -72,10 +73,13 @@ def get_angel_ltp_fresh(symbol, suffix="-EQ"):
         return response.json()
     except Exception:
         return None
-# Full render (watchlist + gainers/losers) measured at ~50s; a 60s refresh
-# was cutting it off mid-render before the Gainers/Losers section (rendered
-# last) ever finished, so it silently never appeared. 150s gives real margin.
-st_autorefresh(interval=150000, key="datarefresh")
+# Full render (watchlist + gainers/losers) measured at ~50s with an 85-symbol
+# gainers/losers universe; a 60s refresh was cutting it off mid-render before
+# the Gainers/Losers section (rendered last) ever finished, so it silently
+# never appeared. Gainers/losers now scans the full ~500-symbol watchlist
+# (INTRADAY_SYMBOLS) instead of a separate small subset, so render time is
+# proportionally longer -- 300s gives real margin for that larger scan.
+st_autorefresh(interval=300000, key="datarefresh")
 st.title("MODI1 - Stock Watchlist")
 
 if st.button("Refresh"):
@@ -173,24 +177,18 @@ st.subheader("Top Ranked Stocks - Live")
 styled_df = df.style.apply(color_verdict, axis=1)
 st.dataframe(styled_df, width="stretch", hide_index=True)
 
-FULL_UNIVERSE = [
-    "MARKSANS", "CARYSIL", "TECHM", "LAURUSLABS", "GLAND", "NETWEB", "POLYCAB",
-    "LODHA", "HINDCOPPER", "NATIONALUM", "LUMAXTECH", "GRSE", "APOLLOHOSP",
-    "ASIANPAINT", "AXISBANK", "BAJAJ-AUTO", "EICHERMOT", "HINDALCO", "ICICIBANK",
-    "NESTLEIND", "ONGC", "SHRIRAMFIN", "SBIN", "SUNPHARMA", "DIVISLAB", "ANANTRAJ",
-    "SOMANYCERA", "ADANIPORTS", "COALINDIA", "ETERNAL", "INDUSINDBK", "JSWSTEEL",
-    "JIOFIN", "TATASTEEL", "GOPAL", "SANDUMA", "HINDZINC", "SAGILITY",
-    "INDHOTEL", "BAJFINANCE", "GRASIM", "HDFCBANK", "KOTAKBANK", "TCS", "TITAN",
-    "WIPRO", "PPLPHARMA", "BOMDYEING", "AJMERA", "GMRAIRPORT", "SUPRAJIT",
-    "MAZDOCK", "ADANIENT", "BEL", "BHARTIARTL", "CIPLA", "HCLTECH", "HDFCLIFE",
-    "INFY", "LT", "M&M", "TATACONSUM", "TRENT", "ULTRACEMCO", "ASTRAL", "ICIL",
-    "MOIL", "HEROMOTOCO", "HINDUNILVR", "MARUTI", "RELIANCE", "SBILIFE", "TMCV",
-    "ANTHEM", "TECHNOE", "HUDCO", "LEMONTREE", "RHIM", "APLAPOLLO", "BAJAJFINSV",
-    "SYNGENE", "GOKEX", "DRREDDY", "ITC", "COHANCE", "NTPC", "POWERGRID",
-    "SIGNATURE", "BRIGADE", "TMPV",
-]
-
 def fetch_one(symbol):
+    if symbol in ANGEL_ONLY_SYMBOLS:
+        angel_result = get_angel_ltp_fresh(symbol, suffix=ANGEL_ONLY_SYMBOLS[symbol])
+        if angel_result and angel_result.get("status"):
+            d = angel_result["data"]
+            ltp = d["ltp"]
+            prev_close = d["close"]
+            if prev_close:
+                pct_change = ((ltp - prev_close) / prev_close) * 100
+                return {"symbol": symbol, "price": ltp, "change": pct_change}
+        return None
+
     scripcode = get_scripcode(symbol)
     if not scripcode:
         return None
@@ -207,7 +205,7 @@ def get_all_live_prices(symbols):
                 results.append(result)
     return results
 
-all_prices = get_all_live_prices(FULL_UNIVERSE)
+all_prices = get_all_live_prices(INTRADAY_SYMBOLS)
 gainers = sorted(all_prices, key=lambda x: x["change"], reverse=True)[:10]
 losers = sorted(all_prices, key=lambda x: x["change"])[:10]
 
