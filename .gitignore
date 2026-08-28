@@ -13,7 +13,9 @@ list_templates.py
 angel_scrips.json
 training_data.csv
 price_model.pkl
-watchlist.json
+# watchlist.json is intentionally tracked (not ignored) -- committed on
+# every stock_check.py run so there's a git history of what the top-10
+# shortlist was on any given day, since MODI1 trades real money off it.
 
 # Runtime state and logs
 __pycache__/
