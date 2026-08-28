@@ -8,6 +8,7 @@ import requests
 import os
 import hashlib
 import pyotp
+import time
 from motilal_login import (
     headers, USER_ID, PASSWORD as MOTILAL_PASSWORD, DOB,
     API_KEY as MOTILAL_API_KEY, TOTP_SECRET as MOTILAL_TOTP_SECRET,
@@ -112,17 +113,25 @@ def get_live_price(scripcode, symbol):
     ltp_headers = headers.copy()
     ltp_headers["Authorization"] = fresh_token
     body = {"clientcode": "", "exchange": "NSE", "scripcode": scripcode}
-    try:
-        response = requests.post(ltp_url, json=body, headers=ltp_headers, timeout=10)
-        result = response.json()
-        if result.get("status") == "SUCCESS":
-            d = result["data"]
-            ltp = d["ltp"] / 100
-            prev_close = d["close"] / 100
-            pct_change = ((ltp - prev_close) / prev_close) * 100 if prev_close else 0
-            return ltp, pct_change
-    except Exception:
-        pass
+
+    # Motilal intermittently returns an empty/invalid body under the
+    # concurrent load from scanning ~500 symbols at once (no rate-limit
+    # backoff on their end) -- one quick retry clears most of these before
+    # falling through to the Angel One fallback below.
+    for attempt in range(2):
+        try:
+            response = requests.post(ltp_url, json=body, headers=ltp_headers, timeout=10)
+            result = response.json()
+            if result.get("status") == "SUCCESS":
+                d = result["data"]
+                ltp = d["ltp"] / 100
+                prev_close = d["close"] / 100
+                pct_change = ((ltp - prev_close) / prev_close) * 100 if prev_close else 0
+                return ltp, pct_change
+            break
+        except Exception:
+            if attempt == 0:
+                time.sleep(0.3)
 
     angel_result = get_angel_ltp_fresh(symbol)
     if angel_result and angel_result.get("status"):
