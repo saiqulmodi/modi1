@@ -185,7 +185,135 @@ def check_trend_reversal(daily_history, today_high, today_low, min_streak_days=6
     return None
 
 
-def get_intraday_confirmation(token, symbol, daily_history, exchange="NSE"):
+def check_52week_breakout(daily_history, today_high, today_low, window_days=252):
+    """
+    Fresh 52-week high (today's high exceeds the prior ~252-trading-day
+    high) or 52-week low (today's low undercuts the prior 52-week low).
+    Needs daily_history to cover at least close to a year -- returns None
+    if there isn't enough (e.g. a recent IPO).
+
+    Returns "high_breakout", "low_breakout", or None.
+    """
+    if daily_history is None or len(daily_history) < 200:
+        return None
+    window = daily_history.tail(window_days)
+    week52_high = window["High"].max()
+    week52_low = window["Low"].min()
+    if today_high > week52_high:
+        return "high_breakout"
+    if today_low < week52_low:
+        return "low_breakout"
+    return None
+
+
+def check_relative_strength(symbol_pct_change, index_pct_change, threshold=0.5):
+    """
+    Relative strength/weakness vs. the index (Nifty), independent of the
+    stock's own absolute move -- e.g. Nifty down 1% but this stock up is
+    unusually strong, worth flagging even if the stock's own move looks
+    unremarkable in isolation. threshold is in percentage points.
+
+    Returns "strength" (outperforming by >= threshold), "weakness"
+    (underperforming by >= threshold), or None.
+    """
+    if symbol_pct_change is None or index_pct_change is None:
+        return None
+    diff = symbol_pct_change - index_pct_change
+    if diff >= threshold:
+        return "strength"
+    if diff <= -threshold:
+        return "weakness"
+    return None
+
+
+def check_squeeze_breakout(daily_history, today_close, bb_period=20, lookback_days=120, squeeze_percentile=20):
+    """
+    Bollinger Band squeeze breakout: the stock was sitting in an unusually
+    tight trading range (band width in the bottom `squeeze_percentile`% of
+    its own last `lookback_days`) as of yesterday, and today's price just
+    broke out above yesterday's upper band (bullish) or below yesterday's
+    lower band (bearish). A squeeze without today's breakout returns None
+    -- this only fires on the actual breakout day, not the whole squeeze
+    period.
+
+    Returns "bullish_breakout", "bearish_breakout", or None.
+    """
+    if daily_history is None or len(daily_history) < bb_period + lookback_days:
+        return None
+
+    close = daily_history["Close"]
+    mid = close.rolling(bb_period).mean()
+    std = close.rolling(bb_period).std()
+    upper = mid + 2 * std
+    lower = mid - 2 * std
+    band_width = (upper - lower) / mid
+
+    recent_width = band_width.tail(lookback_days)
+    if recent_width.isna().any():
+        return None
+
+    yesterday_width = recent_width.iloc[-1]
+    threshold_width = recent_width.quantile(squeeze_percentile / 100)
+    was_squeezed = yesterday_width <= threshold_width
+
+    if not was_squeezed:
+        return None
+
+    yesterday_upper = upper.iloc[-1]
+    yesterday_lower = lower.iloc[-1]
+    if today_close > yesterday_upper:
+        return "bullish_breakout"
+    if today_close < yesterday_lower:
+        return "bearish_breakout"
+    return None
+
+
+def check_volume_accumulation(daily_history, min_days=3, volume_ratio_threshold=1.5):
+    """
+    Consecutive-day volume accumulation/distribution: `min_days` (default
+    3) straight COMPLETE trading days each showing volume >= threshold x
+    the 20-day average, all closing in the same direction -- a different,
+    slower signal from the existing single-day 2x volume check, aimed at
+    catching sustained buying/selling rather than a one-day spike.
+
+    Returns "accumulation" (up days), "distribution" (down days), or None.
+    """
+    if daily_history is None or len(daily_history) < min_days + 21:
+        return None
+
+    closes = daily_history["Close"]
+    volumes = daily_history["Volume"]
+    avg_volume_20d = volumes.rolling(20).mean()
+
+    recent_closes = closes.tail(min_days + 1).values
+    recent_volumes = volumes.tail(min_days).values
+    recent_avg_volumes = avg_volume_20d.tail(min_days).values
+
+    if pd.isna(recent_avg_volumes).any():
+        return None
+
+    up_days = 0
+    down_days = 0
+    for i in range(min_days):
+        day_close = recent_closes[i + 1]
+        prev_close = recent_closes[i]
+        volume_confirms = recent_volumes[i] >= volume_ratio_threshold * recent_avg_volumes[i]
+        if not volume_confirms:
+            up_days = down_days = -999  # disqualify -- one weak-volume day breaks the streak
+            break
+        if day_close > prev_close:
+            up_days += 1
+        elif day_close < prev_close:
+            down_days += 1
+
+    if up_days == min_days:
+        return "accumulation"
+    if down_days == min_days:
+        return "distribution"
+    return None
+
+
+def get_intraday_confirmation(token, symbol, daily_history, exchange="NSE", index_pct_change=None):
     """
     daily_history: the daily OHLCV DataFrame for the last ~30 days (e.g.
     yf.Ticker(symbol + ".NS").history(period="30d")) -- used both as the
@@ -228,6 +356,15 @@ def get_intraday_confirmation(token, symbol, daily_history, exchange="NSE"):
     today_low = df["low"].min()
     swing_structure = check_swing_structure(daily_history, today_high, today_low)
     trend_reversal = check_trend_reversal(daily_history, today_high, today_low)
+    week52 = check_52week_breakout(daily_history, today_high, today_low)
+    squeeze = check_squeeze_breakout(daily_history, current_price)
+    volume_trend = check_volume_accumulation(daily_history)
+
+    symbol_pct_change = None
+    if daily_history is not None and len(daily_history) and daily_history["Close"].iloc[-1]:
+        prev_close = daily_history["Close"].iloc[-1]
+        symbol_pct_change = (current_price - prev_close) / prev_close * 100
+    relative_strength = check_relative_strength(symbol_pct_change, index_pct_change)
 
     return {
         "current_price": round(current_price, 2),
@@ -248,4 +385,11 @@ def get_intraday_confirmation(token, symbol, daily_history, exchange="NSE"):
         "trend_reversal": trend_reversal,
         "trend_reversal_bullish": trend_reversal == "bullish_reversal",
         "trend_reversal_bearish": trend_reversal == "bearish_reversal",
+        # Four more independent, alert-only signals:
+        "week52_breakout": week52,
+        "squeeze_breakout": squeeze,
+        "volume_trend": volume_trend,
+        "symbol_pct_change": round(symbol_pct_change, 2) if symbol_pct_change is not None else None,
+        "index_pct_change": round(index_pct_change, 2) if index_pct_change is not None else None,
+        "relative_strength": relative_strength,
     }
