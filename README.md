@@ -162,6 +162,12 @@ optional one-off test scripts (not imported by anything else) — only
 recreate them if you want to test a WhatsApp send directly, using the same
 fields as `whatsapp_config.py` above.
 
+**Status: WhatsApp alerting is currently not active** — Twilio requires a
+paid subscription/sender approval to send outside the sandbox's limited
+window, which isn't set up right now. `send_alert.py` calls will fail
+silently in that path until a paid Twilio plan is in place; Telegram
+alerting (`send_telegram.py`) is unaffected and is the working channel.
+
 ## Running
 
 - `run_dashboard.bat` — launches `app.py` (Streamlit dashboard)
