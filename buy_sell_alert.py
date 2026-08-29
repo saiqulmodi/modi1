@@ -380,18 +380,35 @@ for entry in watchlist:
                 )
 
 if new_alerts:
-    CHUNK_SIZE = 40
+    # Chunk by character length, not item count -- a fixed 40-items-per-
+    # message chunk can still exceed Telegram's 4096-char cap when alerts
+    # are the longer multi-line kind (squeeze/volume/relative-strength
+    # entries with a "Why:" line), which would silently drop the whole
+    # message ("Bad Request: message is too long", nothing delivered).
+    # Same bug, same fix, as MODI6's ma_rsi_alert.py.
+    MAX_MESSAGE_CHARS = 3500
+    HEADER_RESERVE = 60  # room for the "(part N/M)" header line
+    chunks = []
+    current_chunk, current_len = [], 0
+    for alert_text in new_alerts:
+        if len(alert_text) > MAX_MESSAGE_CHARS - HEADER_RESERVE:
+            alert_text = alert_text[:MAX_MESSAGE_CHARS - HEADER_RESERVE] + "... [truncated]"
+        if current_len + len(alert_text) + 1 > MAX_MESSAGE_CHARS - HEADER_RESERVE and current_chunk:
+            chunks.append(current_chunk)
+            current_chunk, current_len = [], 0
+        current_chunk.append(alert_text)
+        current_len += len(alert_text) + 1
+    if current_chunk:
+        chunks.append(current_chunk)
+
     total_sent_ok = True
-    for i in range(0, len(new_alerts), CHUNK_SIZE):
-        chunk = new_alerts[i:i + CHUNK_SIZE]
-        part_num = (i // CHUNK_SIZE) + 1
-        total_parts = (len(new_alerts) + CHUNK_SIZE - 1) // CHUNK_SIZE
-        header = f"*MODI1 Buy/Sell Signal* (part {part_num}/{total_parts})" if total_parts > 1 else "*MODI1 Buy/Sell Signal*"
+    for part_num, chunk in enumerate(chunks, start=1):
+        header = f"*MODI1 Buy/Sell Signal* (part {part_num}/{len(chunks)})" if len(chunks) > 1 else "*MODI1 Buy/Sell Signal*"
         message = header + "\n" + "\n".join(chunk)
         sent = send_telegram_message(message)
         if not sent:
             total_sent_ok = False
-    print(f"Sent alert for {len(new_alerts)} verdict change(s). Telegram sent: {total_sent_ok}")
+    print(f"Sent alert for {len(new_alerts)} verdict change(s) in {len(chunks)} message(s). Telegram sent: {total_sent_ok}")
 else:
     print("No verdict changes to alert.")
 
