@@ -35,6 +35,8 @@ open) or the candle fetch fails, get_intraday_confirmation() returns None
 and the caller should treat that as "no confirmation" rather than guessing.
 """
 
+import time
+
 import requests
 import pandas as pd
 import yfinance as yf
@@ -43,6 +45,14 @@ from angel_login import auth_token, API_KEY
 
 CANDLE_URL = "https://apiconnect.angelone.in/rest/secure/angelbroking/historical/v1/getCandleData"
 ORB_MINUTES = 15
+
+# Angel's historical-candle endpoint times out or drops the connection
+# often enough under this scan's per-symbol call volume (thousands of
+# occurrences in production logs) that a single attempt isn't reliable --
+# short exponential backoff before giving up and returning None (still
+# fails closed, same as before, just after trying a couple more times).
+CANDLE_FETCH_MAX_ATTEMPTS = 3
+CANDLE_FETCH_BACKOFF_BASE_SECONDS = 1
 
 MEGA_CAP_MARKET_CAP = 1_000_000_000_000   # Rs. 1,00,000 crore
 LARGE_CAP_MARKET_CAP = 200_000_000_000    # Rs. 20,000 crore
@@ -74,12 +84,20 @@ def get_today_candles(token, exchange="NSE", interval="FIVE_MINUTE"):
         "fromdate": f"{today} 09:15",
         "todate": f"{today} 15:30",
     }
-    try:
-        response = requests.post(CANDLE_URL, json=body, headers=_headers(), timeout=10)
-        result = response.json()
-    except Exception as e:
-        print(f"Candle fetch error: {e}")
-        return None
+    result = None
+    for attempt in range(1, CANDLE_FETCH_MAX_ATTEMPTS + 1):
+        try:
+            response = requests.post(CANDLE_URL, json=body, headers=_headers(), timeout=10)
+            result = response.json()
+            break
+        except Exception as e:
+            if attempt < CANDLE_FETCH_MAX_ATTEMPTS:
+                backoff = CANDLE_FETCH_BACKOFF_BASE_SECONDS * (2 ** (attempt - 1))
+                print(f"Candle fetch error (attempt {attempt}/{CANDLE_FETCH_MAX_ATTEMPTS}, retrying in {backoff}s): {e}")
+                time.sleep(backoff)
+            else:
+                print(f"Candle fetch error (attempt {attempt}/{CANDLE_FETCH_MAX_ATTEMPTS}, giving up): {e}")
+                return None
 
     if not result.get("status") or not result.get("data"):
         return None
