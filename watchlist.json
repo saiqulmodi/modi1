@@ -1,17 +1,5 @@
 [
   {
-    "symbol": "CARYSIL",
-    "name": "Carysil Limited",
-    "score": 6,
-    "notes": [
-      "PEG 0.79 (undervalued)",
-      "low debt (46)",
-      "revenue growth 15.5%",
-      "uptrend (50MA>200MA)",
-      "RSI 19 (oversold)"
-    ]
-  },
-  {
     "symbol": "CASTROLIND",
     "name": "Castrol India Limited",
     "score": 6,
@@ -21,7 +9,7 @@
       "strong ROE (57.0%)",
       "revenue growth 25.0%",
       "uptrend (50MA>200MA)",
-      "RSI 41 (neutral)"
+      "RSI 40 (neutral)"
     ]
   },
   {
@@ -29,7 +17,7 @@
     "name": "Travel Food Services Limited",
     "score": 6,
     "notes": [
-      "PEG 0.95 (undervalued)",
+      "PEG 0.94 (undervalued)",
       "low debt (17)",
       "revenue growth 20.6%",
       "uptrend (50MA>200MA)",
@@ -37,15 +25,15 @@
     ]
   },
   {
-    "symbol": "SSWL",
-    "name": "Steel Strips Wheels Limited",
+    "symbol": "SIYSIL",
+    "name": "Siyaram Silk Mills Limited",
     "score": 6,
     "notes": [
-      "PEG 0.47 (undervalued)",
-      "low debt (46)",
-      "revenue growth 27.2%",
+      "PEG 0.08 (undervalued)",
+      "low debt (24)",
+      "revenue growth 14.4%",
       "uptrend (50MA>200MA)",
-      "RSI 26 (oversold)"
+      "RSI 27 (oversold)"
     ]
   },
   {
@@ -53,11 +41,11 @@
     "name": "Mahindra Lifespace Developers Limited",
     "score": 6,
     "notes": [
-      "PEG 0.64 (undervalued)",
+      "PEG 0.63 (undervalued)",
       "low debt (18)",
       "revenue growth 2909.5%",
       "uptrend (50MA>200MA)",
-      "RSI 26 (oversold)"
+      "RSI 25 (oversold)"
     ]
   },
   {
@@ -69,7 +57,7 @@
       "low debt (15)",
       "revenue growth 42.9%",
       "uptrend (50MA>200MA)",
-      "RSI 25 (oversold)"
+      "RSI 23 (oversold)"
     ]
   },
   {
@@ -82,7 +70,7 @@
       "strong ROE (49.9%)",
       "revenue growth 68.7%",
       "uptrend (50MA>200MA)",
-      "RSI 57 (neutral)"
+      "RSI 58 (neutral)"
     ]
   },
   {
@@ -90,11 +78,11 @@
     "name": "Lenskart Solutions Limited",
     "score": 5,
     "notes": [
-      "PEG 0.65 (undervalued)",
+      "PEG 0.67 (undervalued)",
       "low debt (35)",
       "revenue growth 43.3%",
       "uptrend (50MA>200MA)",
-      "RSI 72 (overbought)"
+      "RSI 76 (overbought)"
     ]
   },
   {
@@ -106,7 +94,7 @@
       "low debt (3)",
       "revenue growth 19.6%",
       "uptrend (50MA>200MA)",
-      "RSI 67 (neutral)"
+      "RSI 46 (neutral)"
     ]
   },
   {
@@ -114,11 +102,23 @@
     "name": "Kajaria Ceramics Limited",
     "score": 5,
     "notes": [
-      "PEG 0.64 (undervalued)",
+      "PEG 0.66 (undervalued)",
       "low debt (7)",
       "revenue growth 20.4%",
       "uptrend (50MA>200MA)",
-      "RSI 58 (neutral)"
+      "RSI 55 (neutral)"
+    ]
+  },
+  {
+    "symbol": "MOTHERSON",
+    "name": "Samvardhana Motherson International Limited",
+    "score": 5,
+    "notes": [
+      "PEG 0.38 (undervalued)",
+      "low debt (44)",
+      "revenue growth 16.6%",
+      "uptrend (50MA>200MA)",
+      "RSI 35 (neutral)"
     ]
   }
 ]
