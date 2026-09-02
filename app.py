@@ -206,7 +206,17 @@ def fetch_one(symbol):
         return {"symbol": symbol, "price": ltp, "change": pct_change}
     return None
 
+@st.cache_data(ttl=600)
 def get_all_live_prices(symbols):
+    # Cached (10 min) because this scan of ~500+ symbols can take longer to
+    # complete than a single 300s autorefresh cycle under real-world API
+    # latency/throttling. Without caching, every rerun starts the scan over
+    # from scratch, and if it never finishes within one cycle before the
+    # next rerun fires, the Gainers/Losers section (which only renders
+    # after this call returns) never appears at all -- across every
+    # session, not just a slow one. Caching means once any single run
+    # finally succeeds, every session gets that result instantly for the
+    # next 10 minutes instead of each re-running the full scan.
     results = []
     with ThreadPoolExecutor(max_workers=8) as executor:
         for result in executor.map(fetch_one, symbols):
@@ -231,12 +241,12 @@ st.subheader("Top 10 Gainers")
 if not gainers_df.empty:
     st.dataframe(
         gainers_df.style.apply(highlight_gain, axis=1).format({"price": "Rs.{:.2f}", "change": "{:+.2f}%"}),
-        hide_index=True, width=400
+        hide_index=True, width="stretch"
     )
 
 st.subheader("Top 10 Losers")
 if not losers_df.empty:
     st.dataframe(
         losers_df.style.apply(highlight_loss, axis=1).format({"price": "Rs.{:.2f}", "change": "{:+.2f}%"}),
-        hide_index=True, width=400
+        hide_index=True, width="stretch"
     )

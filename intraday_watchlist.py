@@ -149,6 +149,36 @@ INTRADAY_SYMBOLS = [
     "GRANULES", "HESTERBIO", "OFSS", "MPHASIS", "PARKHOSPS", "SHARDAMOTR",
     "ERIS", "POLICYBZR", "INDIASHLTR", "SHAILY", "BECTORFOOD", "REDTAPE",
     "TCPLPACK", "SURYAROSNI", "TBZ", "KSOLVES",
+
+    # Added by explicit request. Corrections: THEELA -> THELEELA (Schloss
+    # Bangalore/The Leela), INDOAMIN-BE -> INDOAMIN (real ticker has no
+    # suffix; it's a BE-series/trade-to-trade stock in nse_scrips.csv, not
+    # EQ, so it's routed to Angel via ANGEL_ONLY_SYMBOLS below like the
+    # other -BE names, rather than Motilal's EQ-only lookup).
+    "RALLIS", "NOVARTIND", "CHENNPETRO", "SOLARA", "NTPCGREEN", "GUJALKALI",
+    "WIPL", "CAPLIPOINT", "EMCURE", "RATNAMANI", "INDOAMIN", "KPIGREEN",
+    "INDIAGLYCO", "SHREEJISPG", "SWARAJENG", "AWL", "PICCADIL", "THELEELA",
+
+    # Added by explicit request (large batch). DATAPATTNS, CUMMINSIND, LT
+    # already present, skipped. MENONBE-BE -> MENONBE (BE-series, same
+    # handling as INDOAMIN above -- routed to Angel via ANGEL_ONLY_SYMBOLS).
+    # HITECK and ICICIGINAV couldn't be confidently resolved to a real
+    # symbol (multiple candidates for HITECK, no match for ICICIGINAV --
+    # ICICIGI is already present separately) -- skipped rather than guessed.
+    "POWERINDIA", "LICI", "PGHL", "IKS", "AURUM", "NAVKARCORP", "MENONBE",
+    "RAMAPHO", "HUHTAMAKI", "ARVSMART", "GMDCLTD", "CEINSYS", "HUBTOWN",
+    "FDC", "GARUDA", "BORORENEW", "KTKBANK", "SEDEMAC", "ALIVUS", "SARDAEN",
+    "EUROPRATIK", "DOLLAR", "RUPA", "THEJO", "BLUEDART", "NIVABUPA",
+    "ADFFOODS", "DEVYANI", "TRUALT", "DIXON", "IIFL", "BANKINDIA", "RAMKY",
+    "NAZARA", "PIIND", "EMAMILTD", "EUREKAFORB", "MAHABANK", "EPL", "KROSS",
+    "SHAREINDIA", "KDDL", "BLS", "MAYURUNIQ", "DREDGECORP", "METROBRAND",
+    "PACEDIGITK", "BAYERCROP", "NESCO", "SAGCEM", "MASFIN", "NATCOPHARM",
+    "MANGLMCEM", "TAALTECH", "SATIN", "DRAGARWQ", "NOCIL", "UNIMECH",
+    "TIMKEN", "SANOFI", "ELANTAS", "IGARASHI", "GOLDIAM", "PDSL", "JGCHEM",
+    "MEDIASSIST", "VESUVIUS", "GHCLTEXTIL", "INDIANB", "FEDERALBNK",
+    "SERVOTECH", "RPGLIFE", "VENKEYS", "VOLTAS", "ALICON", "IZMO",
+    "AJAXENGG", "APARINDS", "LTF", "SMARTWORKS", "ORIENTELEC", "UTIAMC",
+    "GANDHAR", "BHAGCHEM", "CAPITALSFB",
 ]
 
 # Symbols not present as "EQ" in Motilal's nse_scrips.csv -- routed straight to
@@ -166,6 +196,8 @@ ANGEL_ONLY_SYMBOLS = {
     "DIACABS": "-BE",
     "SUTLEJTEX": "-BE",
     "AHLWEST": "-BE",
+    "INDOAMIN": "-BE",
+    "MENONBE": "-BE",
     "KRN": "-EQ",
     "LEAPIND": "-EQ",
     "SUNSHIEL": "-EQ",

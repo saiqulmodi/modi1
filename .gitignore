@@ -28,4 +28,6 @@ protective_exit_state.json
 trend_reversal_alerted_state.json
 extra_signals_alerted_state.json
 momentum_alerted_state.json
+momentum_scan_alerted_state.json
 gainers_losers.json
+angel_token_cache.json

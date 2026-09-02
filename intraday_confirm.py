@@ -8,17 +8,15 @@ when today's actual intraday price action agrees with the direction, rather
 than alerting purely on daily-bar fundamentals/trend data that may be stale
 by the time the market opens.
 
-Volume confirmation is liquidity-tiered, since a flat ratio means very
-different things depending on how liquid a stock normally is:
+Volume confirmation is tiered by Nifty 50 membership, since a flat ratio
+means very different things depending on how liquid a stock normally is:
 
-  - Mega-cap (market cap >= 1,00,000 crore): needs today's volume >= 1.75x
-    the 20-day average. These names are so liquid that even 1.75x is a real,
-    unusual move.
-  - Large-cap (market cap >= 20,000 crore): needs >= 1.5x the 20-day average.
-  - Mid/small-cap (everything smaller): needs >= 2x the 20-day average --
-    the highest bar of the three, since these stocks see noisier day-to-day
-    volume swings and a smaller multiple wouldn't reliably separate a real
-    move from ordinary noise.
+  - Nifty 50 constituent: needs today's volume >= 1.5x the 50-day average.
+    These names are liquid enough that even 1.5x is a real, unusual move.
+  - Everything else (mid/small-cap and other large-cap names not in the
+    Nifty 50): needs >= 2x the 50-day average -- the higher bar, since these
+    stocks see noisier day-to-day volume swings and a smaller multiple
+    wouldn't reliably separate a real move from ordinary noise.
 
 Also checks a 3-day swing structure using daily bars:
   - Higher High + Higher Low (HH+HL) over the last 3 days (today's
@@ -39,7 +37,6 @@ import time
 
 import requests
 import pandas as pd
-import yfinance as yf
 from datetime import datetime
 from angel_login import auth_token, API_KEY
 
@@ -54,11 +51,26 @@ ORB_MINUTES = 15
 CANDLE_FETCH_MAX_ATTEMPTS = 3
 CANDLE_FETCH_BACKOFF_BASE_SECONDS = 1
 
-MEGA_CAP_MARKET_CAP = 1_000_000_000_000   # Rs. 1,00,000 crore
-LARGE_CAP_MARKET_CAP = 200_000_000_000    # Rs. 20,000 crore
-MEGA_CAP_VOLUME_RATIO = 1.75
-LARGE_CAP_VOLUME_RATIO = 1.5
-MID_SMALL_CAP_VOLUME_RATIO = 2.0
+NIFTY50_VOLUME_RATIO = 1.5
+OTHER_VOLUME_RATIO = 2.0
+VOLUME_AVG_WINDOW_DAYS = 50
+
+# Official NSE Nifty 50 index constituents. This list is reconstituted by
+# NSE semi-annually (typically March/September) -- worth a spot-check
+# against the current official list every so often rather than assumed
+# permanent.
+NIFTY_50_SYMBOLS = {
+    "ADANIENT", "ADANIPORTS", "APOLLOHOSP", "ASIANPAINT", "AXISBANK",
+    "BAJAJ-AUTO", "BAJFINANCE", "BAJAJFINSV", "BEL", "BHARTIARTL",
+    "CIPLA", "COALINDIA", "DRREDDY", "EICHERMOT", "ETERNAL",
+    "GRASIM", "HCLTECH", "HDFCBANK", "HDFCLIFE", "HEROMOTOCO",
+    "HINDALCO", "HINDUNILVR", "ICICIBANK", "ITC", "INDUSINDBK",
+    "INFY", "JSWSTEEL", "JIOFIN", "KOTAKBANK", "LT",
+    "M&M", "MARUTI", "NTPC", "NESTLEIND", "ONGC",
+    "POWERGRID", "RELIANCE", "SBILIFE", "SHRIRAMFIN", "SBIN",
+    "SUNPHARMA", "TCS", "TATACONSUM", "TATAMOTORS", "TATASTEEL",
+    "TECHM", "TITAN", "TRENT", "ULTRACEMCO", "WIPRO",
+}
 
 
 def _headers():
@@ -109,20 +121,11 @@ def get_today_candles(token, exchange="NSE", interval="FIVE_MINUTE"):
 
 
 def get_volume_threshold(symbol):
-    """Returns (tier, ratio_threshold) for the given symbol's market-cap tier."""
-    try:
-        market_cap = yf.Ticker(symbol + ".NS").info.get("marketCap")
-    except Exception:
-        market_cap = None
-
-    if market_cap is None:
-        return "unknown", MID_SMALL_CAP_VOLUME_RATIO
-    elif market_cap >= MEGA_CAP_MARKET_CAP:
-        return "mega_cap", MEGA_CAP_VOLUME_RATIO
-    elif market_cap >= LARGE_CAP_MARKET_CAP:
-        return "large_cap", LARGE_CAP_VOLUME_RATIO
+    """Returns (tier, ratio_threshold) based on Nifty 50 membership."""
+    if symbol in NIFTY_50_SYMBOLS:
+        return "nifty50", NIFTY50_VOLUME_RATIO
     else:
-        return "mid_small_cap", MID_SMALL_CAP_VOLUME_RATIO
+        return "other", OTHER_VOLUME_RATIO
 
 
 def check_swing_structure(daily_history, today_high, today_low):
@@ -333,9 +336,9 @@ def check_volume_accumulation(daily_history, min_days=3, volume_ratio_threshold=
 
 def get_intraday_confirmation(token, symbol, daily_history, exchange="NSE", index_pct_change=None):
     """
-    daily_history: the daily OHLCV DataFrame for the last ~30 days (e.g.
-    yf.Ticker(symbol + ".NS").history(period="30d")) -- used both as the
-    volume baseline and for the 3-day swing structure check.
+    daily_history: the daily OHLCV DataFrame, at least the last 50 days
+    (e.g. yf.Ticker(symbol + ".NS").history(period="50d")) -- used both as
+    the volume baseline and for the 3-day swing structure check.
 
     Returns a dict describing today's intraday state, or None if there
     isn't enough data yet to judge anything (too early in the day, or the
@@ -361,7 +364,7 @@ def get_intraday_confirmation(token, symbol, daily_history, exchange="NSE", inde
         orb_breakout = None
 
     today_volume = df["volume"].sum()
-    daily_volume = daily_history["Volume"].tail(20) if daily_history is not None else None
+    daily_volume = daily_history["Volume"].tail(VOLUME_AVG_WINDOW_DAYS) if daily_history is not None else None
     mean_volume = daily_volume.mean() if daily_volume is not None and len(daily_volume) else None
     volume_ratio = (today_volume / mean_volume) if mean_volume else None
 

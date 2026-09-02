@@ -14,9 +14,9 @@ average return. So the base signal is:
 On top of that, a BUY/SELL is only actually alerted on if today's intraday
 price action (see intraday_confirm.py) agrees: price on the right side of
 VWAP, an Opening Range Breakout in the same direction, and volume confirming
-(liquidity-tiered: 1.75x/1.5x the 20-day average for mega/large caps, or a
-2-standard-deviation volume z-score for mid/small caps, since a flat ratio
-means very different things depending on how liquid the stock normally is).
+(tiered by Nifty 50 membership: 1.5x the 50-day average for Nifty 50 names,
+2x for everything else, since a flat ratio means very different things
+depending on how liquid the stock normally is).
 This avoids firing an alert purely off daily-bar data when nothing is
 actually happening intraday. If intraday data can't be fetched (e.g. too
 early in the session), the signal is held back rather than alerted on blind.
@@ -246,15 +246,20 @@ for entry in watchlist:
     # Independent, ALERT-ONLY (never auto-traded): a 6+ day Lower-Low+Lower-High
     # downtrend that just reversed into a Higher-High+Higher-Low day. Unlike
     # the score-based BUY above, this is purely a Telegram suggestion for you
-    # to act on manually -- fires at most once per symbol per day.
+    # to act on manually -- fires at most once per symbol per day. Also
+    # requires volume_confirms (same Nifty50 1.5x / other 2x threshold as
+    # the main BUY/SELL gate) -- added by explicit request, this wasn't
+    # volume-gated before.
     if (
         intraday is not None
         and intraday.get("trend_reversal_bullish")
+        and intraday.get("volume_confirms")
         and trend_reversal_state.get(symbol) != _today_str
     ):
         new_alerts.append(
             f"\U0001f7e1 {symbol} ({entry['name']}): TREND REVERSAL BUY (manual, not auto-traded) -- "
-            f"current price {intraday['current_price']}\n"
+            f"current price {intraday['current_price']}, vol {intraday['volume_ratio']}x avg "
+            f"(needs {intraday['volume_threshold']}x, {intraday['liquidity_tier']})\n"
             f"    Why: this stock had an extended 6+ day downtrend (lower highs and lower lows "
             f"each day) that just reversed today (higher high AND higher low together) -- "
             f"classic sign the downtrend has exhausted itself"
@@ -313,18 +318,21 @@ for entry in watchlist:
             )
             extra_signals_state[vol_trend_key] = _today_str
 
+        # Also requires volume_confirms -- added by explicit request, this
+        # wasn't volume-gated before.
         rel_strength = intraday.get("relative_strength")
         rel_strength_key = f"{symbol}_relstrength"
-        if rel_strength and extra_signals_state.get(rel_strength_key) != _today_str:
+        if rel_strength and intraday.get("volume_confirms") and extra_signals_state.get(rel_strength_key) != _today_str:
             label = "RELATIVE STRENGTH vs Nifty" if rel_strength == "strength" else "RELATIVE WEAKNESS vs Nifty"
             emoji = "\U0001f7e2" if rel_strength == "strength" else "\U0001f534"
+            vol_str = f"vol {intraday['volume_ratio']}x avg (needs {intraday['volume_threshold']}x, {intraday['liquidity_tier']})"
             why = (
                 f"stock is up {intraday['symbol_pct_change']:+.2f}% today vs Nifty's {intraday['index_pct_change']:+.2f}% -- meaningfully outperforming the broader market"
                 if rel_strength == "strength" else
                 f"stock is down {intraday['symbol_pct_change']:+.2f}% today vs Nifty's {intraday['index_pct_change']:+.2f}% -- meaningfully underperforming the broader market"
             )
             new_alerts.append(
-                f"{emoji} {symbol} ({entry['name']}): {label}\n"
+                f"{emoji} {symbol} ({entry['name']}): {label} -- {vol_str}\n"
                 f"    Why: {why}"
             )
             extra_signals_state[rel_strength_key] = _today_str
