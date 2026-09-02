@@ -17,11 +17,23 @@
     "name": "Travel Food Services Limited",
     "score": 6,
     "notes": [
-      "PEG 0.94 (undervalued)",
+      "PEG 0.95 (undervalued)",
       "low debt (17)",
       "revenue growth 20.6%",
       "uptrend (50MA>200MA)",
-      "RSI 25 (oversold)"
+      "RSI 24 (oversold)"
+    ]
+  },
+  {
+    "symbol": "BSE",
+    "name": "BSE Limited",
+    "score": 6,
+    "notes": [
+      "PEG 0.75 (undervalued)",
+      "low debt (0)",
+      "revenue growth 64.0%",
+      "uptrend (50MA>200MA)",
+      "RSI 27 (oversold)"
     ]
   },
   {
@@ -33,7 +45,7 @@
       "low debt (24)",
       "revenue growth 14.4%",
       "uptrend (50MA>200MA)",
-      "RSI 27 (oversold)"
+      "RSI 25 (oversold)"
     ]
   },
   {
@@ -41,11 +53,23 @@
     "name": "Mahindra Lifespace Developers Limited",
     "score": 6,
     "notes": [
-      "PEG 0.63 (undervalued)",
+      "PEG 0.62 (undervalued)",
       "low debt (18)",
       "revenue growth 2909.5%",
       "uptrend (50MA>200MA)",
-      "RSI 25 (oversold)"
+      "RSI 20 (oversold)"
+    ]
+  },
+  {
+    "symbol": "MPSLTD",
+    "name": "MPS Limited",
+    "score": 6,
+    "notes": [
+      "PEG 0.54 (undervalued)",
+      "low debt (10)",
+      "revenue growth 20.4%",
+      "uptrend (50MA>200MA)",
+      "RSI 29 (oversold)"
     ]
   },
   {
@@ -53,24 +77,11 @@
     "name": "Tatva Chintan Pharma Chem Limited",
     "score": 6,
     "notes": [
-      "PEG 0.52 (undervalued)",
+      "PEG 0.51 (undervalued)",
       "low debt (15)",
       "revenue growth 42.9%",
       "uptrend (50MA>200MA)",
-      "RSI 25 (oversold)"
-    ]
-  },
-  {
-    "symbol": "OFSS",
-    "name": "Oracle Financial Services Software Limited",
-    "score": 6,
-    "notes": [
-      "PEG 0.26 (undervalued)",
-      "low debt (1)",
-      "strong ROE (49.9%)",
-      "revenue growth 68.7%",
-      "uptrend (50MA>200MA)",
-      "RSI 61 (neutral)"
+      "RSI 22 (oversold)"
     ]
   },
   {
@@ -82,7 +93,18 @@
       "low debt (35)",
       "revenue growth 43.3%",
       "uptrend (50MA>200MA)",
-      "RSI 78 (overbought)"
+      "RSI 77 (overbought)"
+    ]
+  },
+  {
+    "symbol": "ATULAUTO",
+    "name": "Atul Auto Limited",
+    "score": 5,
+    "notes": [
+      "PEG 0.50 (undervalued)",
+      "revenue growth 25.3%",
+      "uptrend (50MA>200MA)",
+      "RSI 23 (oversold)"
     ]
   },
   {
@@ -90,35 +112,11 @@
     "name": "Gland Pharma Limited",
     "score": 5,
     "notes": [
-      "PEG 0.91 (undervalued)",
+      "PEG 0.90 (undervalued)",
       "low debt (3)",
       "revenue growth 19.6%",
       "uptrend (50MA>200MA)",
-      "RSI 48 (neutral)"
-    ]
-  },
-  {
-    "symbol": "KAJARIACER",
-    "name": "Kajaria Ceramics Limited",
-    "score": 5,
-    "notes": [
-      "PEG 0.66 (undervalued)",
-      "low debt (7)",
-      "revenue growth 20.4%",
-      "uptrend (50MA>200MA)",
-      "RSI 55 (neutral)"
-    ]
-  },
-  {
-    "symbol": "MOTHERSON",
-    "name": "Samvardhana Motherson International Limited",
-    "score": 5,
-    "notes": [
-      "PEG 0.38 (undervalued)",
-      "low debt (44)",
-      "revenue growth 16.6%",
-      "uptrend (50MA>200MA)",
-      "RSI 44 (neutral)"
+      "RSI 35 (neutral)"
     ]
   }
 ]
