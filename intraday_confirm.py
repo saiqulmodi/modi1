@@ -43,6 +43,13 @@ from angel_login import auth_token, API_KEY
 CANDLE_URL = "https://apiconnect.angelone.in/rest/secure/angelbroking/historical/v1/getCandleData"
 ORB_MINUTES = 15
 
+# NSE equity session: 09:15-15:30 = 375 minutes. Used to prorate the
+# volume baseline below -- see _session_elapsed_minutes.
+SESSION_START_HOUR = 9
+SESSION_START_MINUTE = 15
+SESSION_TOTAL_MINUTES = 375
+CANDLE_INTERVAL_MINUTES = 5  # matches get_today_candles' default interval="FIVE_MINUTE"
+
 # Angel's historical-candle endpoint times out or drops the connection
 # often enough under this scan's per-symbol call volume (thousands of
 # occurrences in production logs) that a single attempt isn't reliable --
@@ -126,6 +133,28 @@ def get_volume_threshold(symbol):
         return "nifty50", NIFTY50_VOLUME_RATIO
     else:
         return "other", OTHER_VOLUME_RATIO
+
+
+def _session_elapsed_minutes(df):
+    """Minutes of the trading session covered by df's candles, from 09:15
+    up to and including the latest candle. Used to prorate the volume
+    baseline in get_intraday_confirmation: today's cumulative volume so
+    far is a PARTIAL-day figure, so comparing it directly against a
+    full-day average (as if the session had already ended) makes the
+    ratio systematically too low every time this runs before market
+    close -- e.g. 45 minutes into the session, only ~12% of a normal
+    day's volume has typically printed, so even a genuinely 2x-volume day
+    would show a ratio nowhere near a 1.5-2x threshold. Derived from the
+    candle data's own timestamps rather than wall-clock time, so it's
+    correct even if this is called on stale/delayed data."""
+    last_ts = pd.to_datetime(df["timestamp"].iloc[-1])
+    session_start = last_ts.replace(
+        hour=SESSION_START_HOUR, minute=SESSION_START_MINUTE, second=0, microsecond=0
+    )
+    # + CANDLE_INTERVAL_MINUTES: a candle's timestamp marks its start, so
+    # the latest candle's own volume covers the interval after it too.
+    elapsed = (last_ts - session_start).total_seconds() / 60 + CANDLE_INTERVAL_MINUTES
+    return min(max(elapsed, CANDLE_INTERVAL_MINUTES), SESSION_TOTAL_MINUTES)
 
 
 def check_swing_structure(daily_history, today_high, today_low):
@@ -366,7 +395,11 @@ def get_intraday_confirmation(token, symbol, daily_history, exchange="NSE", inde
     today_volume = df["volume"].sum()
     daily_volume = daily_history["Volume"].tail(VOLUME_AVG_WINDOW_DAYS) if daily_history is not None else None
     mean_volume = daily_volume.mean() if daily_volume is not None and len(daily_volume) else None
-    volume_ratio = (today_volume / mean_volume) if mean_volume else None
+    # Prorate the full-day baseline down to however much of the session
+    # today_volume actually covers -- see _session_elapsed_minutes.
+    session_fraction = _session_elapsed_minutes(df) / SESSION_TOTAL_MINUTES
+    prorated_mean_volume = mean_volume * session_fraction if mean_volume else None
+    volume_ratio = (today_volume / prorated_mean_volume) if prorated_mean_volume else None
 
     tier, ratio_threshold = get_volume_threshold(symbol)
     volume_confirms = volume_ratio is not None and volume_ratio >= ratio_threshold
