@@ -1,6 +1,7 @@
 from angel_data import get_angel_ltp
 from motilal_login import headers, auth_token
 from intraday_watchlist import INTRADAY_SYMBOLS, ANGEL_ONLY_SYMBOLS
+from intraday_confirm import get_volume_threshold
 from send_telegram import send_telegram_message
 import yfinance as yf
 import json
@@ -29,7 +30,10 @@ try:
     _run_start = datetime.now()
     print(f"\n===== RUN: {_run_start.strftime('%Y-%m-%d %H:%M:%S')} =====")
 
-    VOLUME_THRESHOLD = 1.21   # 21% above 20-day avg volume
+    # Same Nifty50 (1.5x) / other (2x) tiering as intraday_confirm.py's
+    # BUY/SELL volume gate -- this used to be a flat 1.21x for every
+    # symbol, which meant non-Nifty50 stocks kept firing "volume spike"
+    # alerts well under the 2x bar used everywhere else.
     PRICE_MOVE_THRESHOLD = 10.0  # 10% move vs previous close
 
     def load_intraday_scripcodes(symbols_list, scrips_path="nse_scrips.csv"):
@@ -99,8 +103,9 @@ try:
         avg_str = f"{avg_volume_20d:.0f}" if avg_volume_20d else "N/A"
         print(f"{name}: LTP={ltp:.2f} ({pct_change:+.2f}%)  volume={today_volume}  avg20d={avg_str}  ratio={ratio_str}")
 
-        if volume_ratio and volume_ratio >= VOLUME_THRESHOLD:
-            alerts.append(f"Volume spike {name}: {volume_ratio:.2f}x avg (LTP {ltp:.2f})")
+        tier, volume_threshold = get_volume_threshold(name)
+        if volume_ratio and volume_ratio >= volume_threshold:
+            alerts.append(f"Volume spike {name}: {volume_ratio:.2f}x avg (needs {volume_threshold}x, {tier}) (LTP {ltp:.2f})")
 
         if abs(pct_change) >= PRICE_MOVE_THRESHOLD:
             direction = "up" if pct_change > 0 else "down"
