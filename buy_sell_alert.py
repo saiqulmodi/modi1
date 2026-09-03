@@ -278,21 +278,34 @@ for entry in watchlist:
     # caution as the trend-reversal BUY above) -- each fires at most once
     # per symbol per day.
     if intraday is not None:
-        w52 = intraday.get("week52_breakout")
-        w52_key = f"{symbol}_week52"
-        if w52 and extra_signals_state.get(w52_key) != _today_str:
-            label = "52-WEEK HIGH BREAKOUT" if w52 == "high_breakout" else "52-WEEK LOW BREAKDOWN"
-            emoji = "\U0001f7e2" if w52 == "high_breakout" else "\U0001f534"
-            why = (
-                "today's high just broke above its highest point in the last 52 weeks -- fresh breakout momentum"
-                if w52 == "high_breakout" else
-                "today's low just broke below its lowest point in the last 52 weeks -- fresh breakdown, watch for further downside"
-            )
-            new_alerts.append(
-                f"{emoji} {symbol} ({entry['name']}): {label} -- price {intraday['current_price']}\n"
-                f"    Why: {why}"
-            )
-            extra_signals_state[w52_key] = _today_str
+        # Support/resistance breakout, checked on 3 bar granularities of
+        # the same ~1-year lookback (see check_sr_breakout) -- each
+        # timeframe is independent (daily noise can hide a level that's
+        # only visible on weekly/monthly bars, or vice versa), so each
+        # gets its own dedup key and can alert on its own. Requires
+        # volume_confirms same as trend-reversal/relative-strength above --
+        # a breakout on unremarkable volume is a common false-breakout/
+        # bull-trap pattern, not a real move.
+        SR_TIMEFRAME_LABELS = {"daily": "52-WEEK", "weekly": "52-WEEK (weekly bars)", "monthly": "12-MONTH (monthly bars)"}
+        for timeframe, sr_signal in intraday.get("sr_breakout", {}).items():
+            sr_key = f"{symbol}_sr_{timeframe}"
+            if sr_signal and intraday.get("volume_confirms") and extra_signals_state.get(sr_key) != _today_str:
+                tf_label = SR_TIMEFRAME_LABELS[timeframe]
+                label = f"{tf_label} HIGH BREAKOUT" if sr_signal == "high_breakout" else f"{tf_label} LOW BREAKDOWN"
+                emoji = "\U0001f7e2" if sr_signal == "high_breakout" else "\U0001f534"
+                vol_str = f"vol {intraday['volume_ratio']}x avg (needs {intraday['volume_threshold']}x, {intraday['liquidity_tier']})"
+                why = (
+                    f"today's high just broke above its highest point on {timeframe} bars over that lookback, "
+                    f"with volume backing it up ({vol_str}) -- fresh breakout momentum"
+                    if sr_signal == "high_breakout" else
+                    f"today's low just broke below its lowest point on {timeframe} bars over that lookback, "
+                    f"with volume backing it up ({vol_str}) -- fresh breakdown, watch for further downside"
+                )
+                new_alerts.append(
+                    f"{emoji} {symbol} ({entry['name']}): {label} -- price {intraday['current_price']}\n"
+                    f"    Why: {why}"
+                )
+                extra_signals_state[sr_key] = _today_str
 
         squeeze = intraday.get("squeeze_breakout")
         squeeze_key = f"{symbol}_squeeze"

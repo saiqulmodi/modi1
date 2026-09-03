@@ -265,25 +265,74 @@ def check_trend_reversal(daily_history, today_high, today_low, min_streak_days=6
     return None
 
 
-def check_52week_breakout(daily_history, today_high, today_low, window_days=252):
-    """
-    Fresh 52-week high (today's high exceeds the prior ~252-trading-day
-    high) or 52-week low (today's low undercuts the prior 52-week low).
-    Needs daily_history to cover at least close to a year -- returns None
-    if there isn't enough (e.g. a recent IPO).
+# Support/resistance breakout, checked across three bar granularities of
+# roughly the same ~1-year lookback (252 trading days ~ 52 weeks ~ 12
+# months) -- same idea as MODI8's chart_patterns.check_support_resistance_
+# breakout, adapted to compare against TODAY'S LIVE intraday high/low
+# instead of a closed bar, so a breakout is caught the moment it happens
+# rather than in MODI8's once-a-day, after-close scan. Different
+# granularities can disagree (a level only visible once daily noise is
+# smoothed out by weekly/monthly bars), so each is reported independently
+# rather than collapsed into one signal.
+#
+# No yearly tier here (unlike MODI8, which fetches "max" period and can
+# always resample 5+ yearly bars): daily_history is only ~2y here (kept
+# short since momentum_scan_alert.py fetches this per-symbol across the
+# whole watchlist every scan), which resamples to just 2 yearly bars --
+# not enough for a meaningful yearly lookback.
+SR_LOOKBACK_BARS = {"daily": 252, "weekly": 52, "monthly": 12}
 
-    Returns "high_breakout", "low_breakout", or None.
+
+def resample_weekly(daily_history):
+    """Resamples a daily OHLCV DataFrame to weekly bars (week ending Friday,
+    matching NSE's trading week)."""
+    return daily_history.resample("W-FRI").agg({
+        "Open": "first", "High": "max", "Low": "min", "Close": "last", "Volume": "sum",
+    }).dropna()
+
+
+def resample_monthly(daily_history):
+    """Resamples a daily OHLCV DataFrame to monthly (calendar-month) bars."""
+    return daily_history.resample("ME").agg({
+        "Open": "first", "High": "max", "Low": "min", "Close": "last", "Volume": "sum",
+    }).dropna()
+
+
+def check_sr_breakout(daily_history, today_high, today_low):
     """
-    if daily_history is None or len(daily_history) < 200:
-        return None
-    window = daily_history.tail(window_days)
-    week52_high = window["High"].max()
-    week52_low = window["Low"].min()
-    if today_high > week52_high:
-        return "high_breakout"
-    if today_low < week52_low:
-        return "low_breakout"
-    return None
+    Fresh support/resistance breakout: today's intraday high so far exceeds
+    the highest High of the lookback window (resistance breakout), or
+    today's intraday low so far undercuts the lowest Low of the window
+    (support breakdown) -- checked once per entry in SR_LOOKBACK_BARS, each
+    on its own resampled timeframe (daily bars as-is, weekly/monthly
+    resampled from the same daily_history). A timeframe is skipped (value
+    None) rather than raising if there isn't enough history for it yet
+    (e.g. a recent IPO won't have 12 monthly bars).
+
+    Returns {"daily": "high_breakout"|"low_breakout"|None, "weekly": ...,
+    "monthly": ...}.
+    """
+    result = {tf: None for tf in SR_LOOKBACK_BARS}
+    if daily_history is None or daily_history.empty:
+        return result
+
+    timeframe_bars = {
+        "daily": daily_history,
+        "weekly": resample_weekly(daily_history),
+        "monthly": resample_monthly(daily_history),
+    }
+    for timeframe, lookback in SR_LOOKBACK_BARS.items():
+        bars = timeframe_bars[timeframe]
+        if bars is None or len(bars) < lookback:
+            continue
+        window = bars.tail(lookback)
+        level_high = window["High"].max()
+        level_low = window["Low"].min()
+        if today_high > level_high:
+            result[timeframe] = "high_breakout"
+        elif today_low < level_low:
+            result[timeframe] = "low_breakout"
+    return result
 
 
 def check_relative_strength(symbol_pct_change, index_pct_change, threshold=0.5):
@@ -440,7 +489,7 @@ def get_intraday_confirmation(token, symbol, daily_history, exchange="NSE", inde
     today_low = df["low"].min()
     swing_structure = check_swing_structure(daily_history, today_high, today_low)
     trend_reversal = check_trend_reversal(daily_history, today_high, today_low)
-    week52 = check_52week_breakout(daily_history, today_high, today_low)
+    sr_breakout = check_sr_breakout(daily_history, today_high, today_low)
     squeeze = check_squeeze_breakout(daily_history, current_price)
     volume_trend = check_volume_accumulation(daily_history)
 
@@ -470,7 +519,7 @@ def get_intraday_confirmation(token, symbol, daily_history, exchange="NSE", inde
         "trend_reversal_bullish": trend_reversal == "bullish_reversal",
         "trend_reversal_bearish": trend_reversal == "bearish_reversal",
         # Four more independent, alert-only signals:
-        "week52_breakout": week52,
+        "sr_breakout": sr_breakout,
         "squeeze_breakout": squeeze,
         "volume_trend": volume_trend,
         "symbol_pct_change": round(symbol_pct_change, 2) if symbol_pct_change is not None else None,
