@@ -33,6 +33,7 @@ open) or the candle fetch fails, get_intraday_confirmation() returns None
 and the caller should treat that as "no confirmation" rather than guessing.
 """
 
+import threading
 import time
 
 import requests
@@ -50,13 +51,41 @@ SESSION_START_MINUTE = 15
 SESSION_TOTAL_MINUTES = 375
 CANDLE_INTERVAL_MINUTES = 5  # matches get_today_candles' default interval="FIVE_MINUTE"
 
-# Angel's historical-candle endpoint times out or drops the connection
-# often enough under this scan's per-symbol call volume (thousands of
-# occurrences in production logs) that a single attempt isn't reliable --
-# short exponential backoff before giving up and returning None (still
-# fails closed, same as before, just after trying a couple more times).
+# Angel's historical-candle endpoint returns an empty (non-JSON) body --
+# "Expecting value: line 1 column 1" -- often enough under this scan's
+# per-symbol call volume (thousands of occurrences in production logs,
+# including from buy_sell_alert.py's own 10-symbol sequential loop) that
+# a single attempt isn't reliable. A one-off manual call succeeds every
+# time, which points to rate-limiting from call frequency rather than a
+# flaky connection: momentum_scan_alert.py fires this from 5 concurrent
+# ThreadPoolExecutor workers with no spacing between requests, so the
+# per-call retry/backoff below was fighting the rate limit call-by-call
+# instead of avoiding it. CANDLE_MIN_INTERVAL_SECONDS below serializes
+# and paces every call (across all threads/callers) to stay under the
+# limit in the first place -- preferring reliable-but-slower fetching
+# over fast-but-flaky, same tradeoff as elsewhere in this codebase --
+# with the retry/backoff kept as a fallback for genuine blips.
 CANDLE_FETCH_MAX_ATTEMPTS = 3
 CANDLE_FETCH_BACKOFF_BASE_SECONDS = 1
+
+CANDLE_MIN_INTERVAL_SECONDS = 1.0
+_candle_rate_lock = threading.Lock()
+_last_candle_call_at = 0.0
+
+
+def _throttle_candle_call():
+    """Blocks (while holding the lock) until at least
+    CANDLE_MIN_INTERVAL_SECONDS have passed since the last candle call from
+    any thread, then reserves this slot. Serializes candle fetches process-
+    wide instead of letting concurrent scan workers hit the endpoint at once.
+    """
+    global _last_candle_call_at
+    with _candle_rate_lock:
+        wait = CANDLE_MIN_INTERVAL_SECONDS - (time.monotonic() - _last_candle_call_at)
+        if wait > 0:
+            time.sleep(wait)
+        _last_candle_call_at = time.monotonic()
+
 
 NIFTY50_VOLUME_RATIO = 1.5
 OTHER_VOLUME_RATIO = 2.0
@@ -105,6 +134,7 @@ def get_today_candles(token, exchange="NSE", interval="FIVE_MINUTE"):
     }
     result = None
     for attempt in range(1, CANDLE_FETCH_MAX_ATTEMPTS + 1):
+        _throttle_candle_call()
         try:
             response = requests.post(CANDLE_URL, json=body, headers=_headers(), timeout=10)
             result = response.json()

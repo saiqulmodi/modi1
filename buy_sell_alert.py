@@ -181,10 +181,18 @@ for entry in watchlist:
         hist = yf.Ticker(symbol + ".NS").history(period="2y")
         intraday = get_intraday_confirmation(token, symbol, hist, index_pct_change=_index_pct_change)
 
+    # Tracks whether this cycle's downgrade-to-HOLD (below) is a real
+    # confirmed HOLD vs. just a transient "couldn't check intraday data this
+    # cycle" -- distinguishing the two matters at the state-update below,
+    # since folding a transient data-gap into state[symbol] as a real "HOLD"
+    # would make the next successful cycle look like a fresh BUY/SELL (state
+    # went HOLD -> BUY) and re-alert on a signal that never actually changed.
+    signal_unconfirmed = False
     if signal in ("BUY", "SELL/AVOID"):
         if intraday is None:
             print(f"{symbol}: {signal} signal held back, no intraday confirmation data available")
             signal = "HOLD"
+            signal_unconfirmed = True
         elif signal == "BUY" and not intraday["confirms_bullish"]:
             print(f"{symbol}: BUY signal held back, intraday action doesn't confirm ({intraday})")
             signal = "HOLD"
@@ -339,7 +347,12 @@ for entry in watchlist:
 
     prev_signal = state.get(symbol)
 
-    if signal != prev_signal:
+    # Skip the state update (and thus any alert) entirely on a transient
+    # confirmation gap -- leaves state[symbol] as whatever the last actually-
+    # confirmed signal was, so the next successful cycle compares against
+    # that instead of against a HOLD that was never real. See
+    # signal_unconfirmed above.
+    if signal != prev_signal and not signal_unconfirmed:
         state[symbol] = signal
         if signal in ("BUY", "SELL/AVOID"):
             emoji = "🟢" if signal == "BUY" else "🔴"
