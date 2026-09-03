@@ -1,0 +1,10 @@
+{
+  "note": "Byte offsets into the logs below as of the moment the throttle+dedup fix (commit 3707ba0) was deployed. check_fix_verification.py reads only content appended after these offsets, so it only judges behavior under the new code, not pre-fix log history.",
+  "deployed_at": "2026-09-03T23:16:00+05:30",
+  "commit": "3707ba0",
+  "offsets": {
+    "logs/buy_sell_alert.log": 403368,
+    "logs/momentum_scan_alert.log": 1815250,
+    "logs/morning_health_check.log": 1431
+  }
+}
