@@ -9,7 +9,7 @@
       "strong ROE (57.0%)",
       "revenue growth 25.0%",
       "uptrend (50MA>200MA)",
-      "RSI 38 (neutral)"
+      "RSI 44 (neutral)"
     ]
   },
   {
@@ -17,23 +17,11 @@
     "name": "Travel Food Services Limited",
     "score": 6,
     "notes": [
-      "PEG 0.95 (undervalued)",
+      "PEG 0.93 (undervalued)",
       "low debt (17)",
       "revenue growth 20.6%",
       "uptrend (50MA>200MA)",
-      "RSI 24 (oversold)"
-    ]
-  },
-  {
-    "symbol": "BSE",
-    "name": "BSE Limited",
-    "score": 6,
-    "notes": [
-      "PEG 0.75 (undervalued)",
-      "low debt (0)",
-      "revenue growth 64.0%",
-      "uptrend (50MA>200MA)",
-      "RSI 27 (oversold)"
+      "RSI 23 (oversold)"
     ]
   },
   {
@@ -45,7 +33,31 @@
       "low debt (24)",
       "revenue growth 14.4%",
       "uptrend (50MA>200MA)",
-      "RSI 25 (oversold)"
+      "RSI 21 (oversold)"
+    ]
+  },
+  {
+    "symbol": "RAJRATAN",
+    "name": "Rajratan Global Wire Limited",
+    "score": 6,
+    "notes": [
+      "PEG 0.46 (undervalued)",
+      "low debt (50)",
+      "revenue growth 29.1%",
+      "uptrend (50MA>200MA)",
+      "RSI 26 (oversold)"
+    ]
+  },
+  {
+    "symbol": "BASF",
+    "name": "BASF India Limited",
+    "score": 6,
+    "notes": [
+      "PEG 0.16 (undervalued)",
+      "low debt (3)",
+      "revenue growth 24.5%",
+      "uptrend (50MA>200MA)",
+      "RSI 29 (oversold)"
     ]
   },
   {
@@ -53,23 +65,35 @@
     "name": "Mahindra Lifespace Developers Limited",
     "score": 6,
     "notes": [
-      "PEG 0.62 (undervalued)",
+      "PEG 0.63 (undervalued)",
       "low debt (18)",
       "revenue growth 2909.5%",
       "uptrend (50MA>200MA)",
-      "RSI 20 (oversold)"
+      "RSI 26 (oversold)"
     ]
   },
   {
-    "symbol": "MPSLTD",
-    "name": "MPS Limited",
+    "symbol": "PSPPROJECT",
+    "name": "PSP Projects Limited",
     "score": 6,
     "notes": [
-      "PEG 0.54 (undervalued)",
-      "low debt (10)",
-      "revenue growth 20.4%",
+      "PEG 0.01 (undervalued)",
+      "low debt (26)",
+      "revenue growth 64.8%",
       "uptrend (50MA>200MA)",
       "RSI 29 (oversold)"
+    ]
+  },
+  {
+    "symbol": "STYLAMIND",
+    "name": "Stylam Industries Limited",
+    "score": 6,
+    "notes": [
+      "PEG 0.47 (undervalued)",
+      "low debt (4)",
+      "revenue growth 15.4%",
+      "uptrend (50MA>200MA)",
+      "RSI 28 (oversold)"
     ]
   },
   {
@@ -77,46 +101,24 @@
     "name": "Tatva Chintan Pharma Chem Limited",
     "score": 6,
     "notes": [
-      "PEG 0.51 (undervalued)",
+      "PEG 0.52 (undervalued)",
       "low debt (15)",
       "revenue growth 42.9%",
       "uptrend (50MA>200MA)",
-      "RSI 22 (oversold)"
+      "RSI 30 (oversold)"
     ]
   },
   {
-    "symbol": "LENSKART",
-    "name": "Lenskart Solutions Limited",
-    "score": 5,
+    "symbol": "OFSS",
+    "name": "Oracle Financial Services Software Limited",
+    "score": 6,
     "notes": [
-      "PEG 0.68 (undervalued)",
-      "low debt (35)",
-      "revenue growth 43.3%",
+      "PEG 0.26 (undervalued)",
+      "low debt (1)",
+      "strong ROE (49.9%)",
+      "revenue growth 68.7%",
       "uptrend (50MA>200MA)",
-      "RSI 77 (overbought)"
-    ]
-  },
-  {
-    "symbol": "ATULAUTO",
-    "name": "Atul Auto Limited",
-    "score": 5,
-    "notes": [
-      "PEG 0.50 (undervalued)",
-      "revenue growth 25.3%",
-      "uptrend (50MA>200MA)",
-      "RSI 23 (oversold)"
-    ]
-  },
-  {
-    "symbol": "GLAND",
-    "name": "Gland Pharma Limited",
-    "score": 5,
-    "notes": [
-      "PEG 0.90 (undervalued)",
-      "low debt (3)",
-      "revenue growth 19.6%",
-      "uptrend (50MA>200MA)",
-      "RSI 35 (neutral)"
+      "RSI 64 (neutral)"
     ]
   }
 ]
