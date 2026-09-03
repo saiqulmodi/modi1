@@ -1,7 +1,7 @@
 from angel_data import get_angel_ltp
 from motilal_login import headers, auth_token
 from intraday_watchlist import INTRADAY_SYMBOLS, ANGEL_ONLY_SYMBOLS
-from intraday_confirm import get_volume_threshold
+from intraday_confirm import get_volume_threshold, VOLUME_AVG_WINDOW_DAYS
 from send_telegram import send_telegram_message
 import yfinance as yf
 import json
@@ -92,16 +92,21 @@ try:
 
         pct_change = ((ltp - prev_close) / prev_close) * 100 if prev_close else 0
 
-        hist = yf.Ticker(name + ".NS").history(period="30d")
-        avg_volume_20d = hist["Volume"].tail(20).mean() if not hist.empty else None
+        # 90d (not 30d) so there's comfortably more than VOLUME_AVG_WINDOW_DAYS
+        # (50) trading days once weekends/holidays are excluded -- this used
+        # to average only the last 20 trading days, which doesn't match the
+        # 50-day baseline intraday_confirm.py uses for the same volume gate
+        # everywhere else.
+        hist = yf.Ticker(name + ".NS").history(period="90d")
+        avg_volume_50d = hist["Volume"].tail(VOLUME_AVG_WINDOW_DAYS).mean() if not hist.empty else None
 
         volume_ratio = None
-        if today_volume and avg_volume_20d:
-            volume_ratio = today_volume / avg_volume_20d
+        if today_volume and avg_volume_50d:
+            volume_ratio = today_volume / avg_volume_50d
 
         ratio_str = f"{volume_ratio:.2f}x" if volume_ratio else "N/A"
-        avg_str = f"{avg_volume_20d:.0f}" if avg_volume_20d else "N/A"
-        print(f"{name}: LTP={ltp:.2f} ({pct_change:+.2f}%)  volume={today_volume}  avg20d={avg_str}  ratio={ratio_str}")
+        avg_str = f"{avg_volume_50d:.0f}" if avg_volume_50d else "N/A"
+        print(f"{name}: LTP={ltp:.2f} ({pct_change:+.2f}%)  volume={today_volume}  avg50d={avg_str}  ratio={ratio_str}")
 
         tier, volume_threshold = get_volume_threshold(name)
         if volume_ratio and volume_ratio >= volume_threshold:
