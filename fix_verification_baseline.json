@@ -1,7 +1,8 @@
 {
-  "note": "Byte offsets into the logs below as of the moment the throttle+dedup fix (commit 3707ba0) was deployed. check_fix_verification.py reads only content appended after these offsets, so it only judges behavior under the new code, not pre-fix log history.",
+  "note": "Byte offsets into the logs below as of 2026-09-03 night, before any of that evening's fixes (candle-fetch throttle, alert-dedup fix, multi-timeframe S/R breakout) had run against live market data. check_fix_verification.py reads only content appended after these offsets, so it only judges behavior under the new code, not pre-fix log history.",
   "deployed_at": "2026-09-03T23:16:00+05:30",
   "commit": "3707ba0",
+  "commits_covered": ["3707ba0", "16fefe1", "ef0a485"],
   "offsets": {
     "logs/buy_sell_alert.log": 403368,
     "logs/momentum_scan_alert.log": 1815250,

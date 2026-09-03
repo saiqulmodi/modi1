@@ -414,13 +414,20 @@ for entry in watchlist:
                 )
 
 if new_alerts:
-    # Log each alert's headline (first line only, skips the multi-line
-    # "Why:" body) to stdout so it lands in logs/buy_sell_alert.log --
-    # without this, the log only ever showed a count ("Sent alert for N
-    # verdict change(s)"), not which symbol/signal actually fired, so
-    # there was no way to audit for repeat alerts after the fact.
+    # Log each full alert (headline AND the "Why:" body) to stdout so it
+    # lands in logs/buy_sell_alert.log -- without this, the log only ever
+    # showed a count ("Sent alert for N verdict change(s)"), not which
+    # symbol/signal actually fired or what volume ratio it cleared, so
+    # there was no way to audit for repeat alerts or volume-gate
+    # compliance after the fact. The "ALERT: " prefix marks the headline
+    # line specifically (for symbol/signal dedup checks); the Why: line
+    # underneath carries the "vol X.XXx avg (needs Y.Yx, TIER)" text for
+    # signals that embed it.
     for alert_text in new_alerts:
-        print(f"ALERT: {alert_text.splitlines()[0]}")
+        headline, *rest = alert_text.splitlines()
+        print(f"ALERT: {headline}")
+        for line in rest:
+            print(line)
 
     # Chunk by character length, not item count -- a fixed 40-items-per-
     # message chunk can still exceed Telegram's 4096-char cap when alerts
