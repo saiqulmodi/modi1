@@ -1,5 +1,30 @@
 [
   {
+    "symbol": "POLYCAB",
+    "name": "Polycab India Limited",
+    "score": 6,
+    "notes": [
+      "PEG 1.36 (fair)",
+      "low debt (2)",
+      "strong ROE (25.5%)",
+      "revenue growth 39.0%",
+      "uptrend (50MA>200MA)",
+      "RSI 25 (oversold)"
+    ]
+  },
+  {
+    "symbol": "GULFOILLUB",
+    "name": "Gulf Oil Lubricants India Limited",
+    "score": 6,
+    "notes": [
+      "PEG 0.52 (undervalued)",
+      "low debt (36)",
+      "revenue growth 30.6%",
+      "uptrend (50MA>200MA)",
+      "RSI 28 (oversold)"
+    ]
+  },
+  {
     "symbol": "CASTROLIND",
     "name": "Castrol India Limited",
     "score": 6,
@@ -9,7 +34,7 @@
       "strong ROE (57.0%)",
       "revenue growth 25.0%",
       "uptrend (50MA>200MA)",
-      "RSI 44 (neutral)"
+      "RSI 50 (neutral)"
     ]
   },
   {
@@ -21,7 +46,7 @@
       "low debt (17)",
       "revenue growth 20.6%",
       "uptrend (50MA>200MA)",
-      "RSI 23 (oversold)"
+      "RSI 28 (oversold)"
     ]
   },
   {
@@ -33,7 +58,7 @@
       "low debt (24)",
       "revenue growth 14.4%",
       "uptrend (50MA>200MA)",
-      "RSI 21 (oversold)"
+      "RSI 23 (oversold)"
     ]
   },
   {
@@ -41,84 +66,58 @@
     "name": "Rajratan Global Wire Limited",
     "score": 6,
     "notes": [
-      "PEG 0.46 (undervalued)",
+      "PEG 0.45 (undervalued)",
       "low debt (50)",
       "revenue growth 29.1%",
       "uptrend (50MA>200MA)",
-      "RSI 26 (oversold)"
+      "RSI 29 (oversold)"
     ]
   },
   {
-    "symbol": "BASF",
-    "name": "BASF India Limited",
-    "score": 6,
+    "symbol": "LENSKART",
+    "name": "Lenskart Solutions Limited",
+    "score": 5,
     "notes": [
-      "PEG 0.16 (undervalued)",
+      "PEG 0.69 (undervalued)",
+      "low debt (35)",
+      "revenue growth 43.3%",
+      "uptrend (50MA>200MA)",
+      "RSI 80 (overbought)"
+    ]
+  },
+  {
+    "symbol": "ATULAUTO",
+    "name": "Atul Auto Limited",
+    "score": 5,
+    "notes": [
+      "PEG 0.49 (undervalued)",
+      "revenue growth 25.3%",
+      "uptrend (50MA>200MA)",
+      "RSI 18 (oversold)"
+    ]
+  },
+  {
+    "symbol": "GLAND",
+    "name": "Gland Pharma Limited",
+    "score": 5,
+    "notes": [
+      "PEG 0.92 (undervalued)",
       "low debt (3)",
-      "revenue growth 24.5%",
+      "revenue growth 19.6%",
       "uptrend (50MA>200MA)",
-      "RSI 29 (oversold)"
+      "RSI 49 (neutral)"
     ]
   },
   {
-    "symbol": "MAHLIFE",
-    "name": "Mahindra Lifespace Developers Limited",
-    "score": 6,
+    "symbol": "KAJARIACER",
+    "name": "Kajaria Ceramics Limited",
+    "score": 5,
     "notes": [
-      "PEG 0.63 (undervalued)",
-      "low debt (18)",
-      "revenue growth 2909.5%",
+      "PEG 0.65 (undervalued)",
+      "low debt (7)",
+      "revenue growth 20.4%",
       "uptrend (50MA>200MA)",
-      "RSI 26 (oversold)"
-    ]
-  },
-  {
-    "symbol": "PSPPROJECT",
-    "name": "PSP Projects Limited",
-    "score": 6,
-    "notes": [
-      "PEG 0.01 (undervalued)",
-      "low debt (26)",
-      "revenue growth 64.8%",
-      "uptrend (50MA>200MA)",
-      "RSI 29 (oversold)"
-    ]
-  },
-  {
-    "symbol": "STYLAMIND",
-    "name": "Stylam Industries Limited",
-    "score": 6,
-    "notes": [
-      "PEG 0.47 (undervalued)",
-      "low debt (4)",
-      "revenue growth 15.4%",
-      "uptrend (50MA>200MA)",
-      "RSI 28 (oversold)"
-    ]
-  },
-  {
-    "symbol": "TATVA",
-    "name": "Tatva Chintan Pharma Chem Limited",
-    "score": 6,
-    "notes": [
-      "PEG 0.52 (undervalued)",
-      "low debt (15)",
-      "revenue growth 42.9%",
-      "uptrend (50MA>200MA)",
-      "RSI 30 (oversold)"
-    ]
-  },
-  {
-    "symbol": "OFSS",
-    "name": "Oracle Financial Services Software Limited",
-    "score": 6,
-    "notes": [
-      "PEG 0.26 (undervalued)",
-      "low debt (1)",
-      "strong ROE (49.9%)",
-      "revenue growth 68.7%",
-      "uptrend (50MA>200MA)",
-      "RSI 64 (neutral)"
+      "RSI 47 (neutral)"
     ]
   }
 ]
