@@ -79,7 +79,7 @@ INTRADAY_SYMBOLS = [
     # general knowledge (not from an official index -- worth a spot-check).
     "BHARATFORG", "BOSCHLTD", "EXIDEIND", "HEROMOTOCO", "TIINDIA",
     "APOLLOTYRE", "AUTOAXLES", "FIEMIND", "JAMNAAUTO",
-    "LUMAXIND", "MRF", "RAJRATAN", "RANEBRAKE", "RANEHOLDIN",
+    "LUMAXIND", "MRF", "RAJRATAN", "RANEHOLDIN",
     "RICOAUTO", "SSWL", "SUBROS", "SUNDRMFAST", "VARROC",
 
     # Data center theme (genuinely niche in listed Indian markets -- most
@@ -96,7 +96,7 @@ INTRADAY_SYMBOLS = [
     "IOC", "PHOENIXLTD", "SHREECEM", "SUZLON",
     "ACC", "JSWDULUX", "ASHOKA", "BERGEPAINT", "BIRLACORPN", "CERA",
     "DALBHARAT", "DBL", "FINPIPE", "GRINFRA", "INDIACEM", "IRB", "IRCON",
-    "ITDCEM", "JKIL", "JKLAKSHMI", "KEC", "KNRCON", "NCC", "NITCO",
+    "JKIL", "JKLAKSHMI", "KEC", "KNRCON", "NCC", "NITCO",
     "NUVOCO", "ORIENTBELL", "PNCINFRA", "PRINCEPIPE", "RITES",
     "STARCEMENT", "TEXRAIL",
 
@@ -179,15 +179,60 @@ INTRADAY_SYMBOLS = [
     "SERVOTECH", "RPGLIFE", "VENKEYS", "VOLTAS", "ALICON", "IZMO",
     "AJAXENGG", "APARINDS", "LTF", "SMARTWORKS", "ORIENTELEC", "UTIAMC",
     "GANDHAR", "BHAGCHEM", "CAPITALSFB",
+
+    # Added 2026-09-05 at user's request (batch add, ~180 pasted symbols).
+    # Every symbol below was verified against live Yahoo Finance price
+    # history before being added. A few misspellings from the original
+    # paste were corrected to their real ticker (JINDALRILL->JINDRILL,
+    # KENNAMETN->KENNAMET, INDIAIANB->INDIANB [already present, so dropped
+    # as a duplicate], GODAVERIB->GODAVARIB, RISHABHA->RISHABH, TILL->TIL,
+    # CMLLALPINETEX->ALPINETEX). 9 symbols from the paste (ASMTEC, SGGHFL,
+    # MOBAVENUE, LGINDIA, AFCOM, NIYOGIN, LAXMIIINDIA, DYNAVSN, LALTHAA)
+    # matched no ticker on Yahoo even after correction attempts and were
+    # left out rather than guessed. KRT was initially added (matched a
+    # loose nse_scrips.csv substring check) but removed after verify_symbols.py
+    # + a direct Yahoo check found it has zero price data -- its only NSE
+    # listing is "KRT-RR", a temporary Rights Renunciation instrument from
+    # a rights issue, not the regular equity. 17 of the remaining symbols
+    # aren't in Motilal's nse_scrips.csv (recent listings) but do resolve
+    # on Angel One, so they're routed there via ANGEL_ONLY_SYMBOLS below.
+    "COLPAL", "CUB", "GODFRYPHLP", "TEAMLEASE", "PTCIL", "STEELCAS",
+    "PANAMAPET", "JSWCEMENT", "SKYGOLD", "SAIL", "GATEWAY", "IMFA",
+    "RELAXO", "SAMBHV", "HARIOMPIPE", "TEXMOPIPES", "KIOCL", "KSB",
+    "SFL", "NAHARSPING", "ROLEXRINGS", "MANYAVAR", "KRISHNADEF", "BANCOINDIA",
+    "ZFSTEERING", "RPSGVENT", "RCF", "OBSCP", "UNICHEMLAB", "BOROSCI",
+    "GANECOS", "WSTCSTPAPR", "ROSSTECH", "ACCELYA", "BRITANNIA", "ETHOSLTD",
+    "HGINFRA", "LTFOODS", "GRAPHITE", "VMARCIND", "GALAXYSURF", "FOSECOIND",
+    "SURAKSHA", "TVSSRICHAK", "IREDA", "AKCAPIT", "UNIONBANK", "JMFINANCIL",
+    "DSSL", "KITEX", "APTUS", "ACUTAAS", "AEGISVOPAK", "BLUESTONE",
+    "THEMISMED", "RPEL", "SHARDACROP", "JUBLINGREA", "CPPLUS", "WHEELS",
+    "DMCC", "FCL", "PRECOT", "CLEANMAX", "ECLERX", "BBTC",
+    "SOTL", "PATELENG", "THANGAMAYL", "HINDWAREAP", "SANGHVIMOV", "LAOPALA",
+    "NGLFINE", "VISHNU", "ABLBL", "CSBBANK", "OMNI", "INDOBORAX",
+    "YASHO", "ALLDIGI", "GREAVESCOT", "NRBBEARING", "INDGN", "GODREJCP",
+    "TANLA", "LGBBROSLTD", "EMIL", "EDELWEISS", "TRITURBINE", "LINCOLN",
+    "BLISSGVS", "BLUEJET", "CREDITACC", "MACPOWER", "ASHAPURMIN", "CORONA",
+    "BSOFT", "JAYNECOIND", "POLYMED", "SONATSOFTW", "LATENTVIEW", "JUBLPHARMA",
+    "INDORAMA", "CINELINE", "CORDELIA", "INDIQUBE", "KPEL",
+    "SWIGGY", "NLCINDIA", "MODIS", "KALPATARU", "METROPOLIS", "WEWORK",
+    "ORKLAINDIA", "DHANUKA", "LTM", "INDOMIM", "DATAMATICS", "SJVN",
+    "VASCONEQ", "CMLL", "LASERPOWER", "KUSUMGAR", "KISSHT", "HEXAGON",
+    "RAMBHAJO", "KNACK", "YOGI", "AUGMONT", "TEMPSENS", "BLEL",
+    "SHIPROCKET", "MILKYMIST", "HTEL", "SKYWAYS", "SHANKESH", "DHOOTTRANS",
+    "GAJA", "SUNSHINE", "MOLBIO", "JINDRILL", "KENNAMET", "GODAVARIB",
+    "RISHABH", "TIL", "ALPINETEX",
 ]
 
 # Symbols not present as "EQ" in Motilal's nse_scrips.csv -- routed straight to
 # Angel One instead of a Motilal scripcode lookup. Value is the Angel symbol
 # suffix: "-EQ" normal, "-BE" = trade-to-trade (T2T stocks cannot be squared
-# off intraday -- alerts only, no auto-trade logic). Two symbols confirmed
-# still missing from BOTH nse_scrips.csv and Angel's scrip master as of
-# 2026-08-28 and left unresolved rather than guessed: ITDCEM (ITD Cementation)
-# and RANEBRAKE (Rane Brake Lining, current NSE symbol is actually "RBL").
+# off intraday -- alerts only, no auto-trade logic). ITDCEM (ITD Cementation)
+# and RANEBRAKE (Rane Brake Lining) were confirmed missing from BOTH
+# nse_scrips.csv and Angel's scrip master as of 2026-08-28 -- Yahoo Finance
+# has zero data for either ticker too (confirmed 2026-09-05), so both were
+# removed from INTRADAY_SYMBOLS above rather than left in unresolved.
+# RANEBRAKE's current NSE symbol is reportedly "RBL" -- not re-added here
+# since that hasn't been independently verified.
 ANGEL_ONLY_SYMBOLS = {
     "DBREALTY": "-EQ",
     "IDEAFORGE": "-EQ",
@@ -204,4 +249,27 @@ ANGEL_ONLY_SYMBOLS = {
     "VALIANTLAB": "-EQ",
     "DLINKINDIA": "-EQ",
     "KAPSTON": "-EQ",
+
+    # Added 2026-09-05 with the batch-add above -- recent listings not yet
+    # in Motilal's nse_scrips.csv snapshot but confirmed present in Angel's
+    # scrip master (re-downloaded 2026-09-05 to check). OBSCP and VMARCIND
+    # trade on the NSE SME board ("-SM", not "-EQ"/"-BE") -- lower liquidity
+    # than mainboard names, worth keeping in mind for alert sizing.
+    "BLISSGVS": "-BE",
+    "HEXAGON": "-BE",
+    "HTEL": "-BE",
+    "YOGI": "-EQ",
+    "AUGMONT": "-EQ",
+    "TEMPSENS": "-EQ",
+    "BLEL": "-EQ",
+    "SHIPROCKET": "-EQ",
+    "MILKYMIST": "-EQ",
+    "SKYWAYS": "-EQ",
+    "SHANKESH": "-EQ",
+    "DHOOTTRANS": "-EQ",
+    "GAJA": "-EQ",
+    "SUNSHINE": "-EQ",
+    "MOLBIO": "-EQ",
+    "OBSCP": "-SM",
+    "VMARCIND": "-SM",
 }
